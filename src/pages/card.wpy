@@ -1,0 +1,190 @@
+<template>
+  <view class="card-container" style="background-image: url({{bgLine}});">
+    <canvas canvas-id="myCanvas" class="myCanvas"/>
+    <view class="content">
+      <view class="btn" @tap="createAgain">再来一遍</view>
+      <view class="btn" @tap="saveImg">保存到相册</view>
+    </view>
+    <view class="entry-btn" @tap="entryIndex">点击进入「刚好读书会」</view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import {random_int} from '@/common/js/func';
+
+  export default class Card extends wepy.page {
+    data = {
+      windowWidth: 0,
+      windowHeight: 0,
+      value: 0,
+      name: '',
+      list: [],
+      currentIndex: 0,
+      bgLine: '',
+    };
+
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '傲慢与偏见',
+        path: '/pages/cardEntry',
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    onLoad(option) {
+      if (!option.value || !option.name) {
+        wx.redirectTo({
+          url: 'cardEntry',
+        })
+      }
+      this.value = option.value;
+      this.name = option.name;
+      this.windowWidth = wx.getSystemInfoSync().windowWidth;
+      this.windowHeight = wx.getSystemInfoSync().windowHeight;
+      this._getCardImages();
+    };
+    methods = {
+      createAgain() {
+        this._getCardImages(true);
+      },
+      saveImg() {
+        wx.showLoading({
+          title: '存储中...',
+        })
+        const self = this;
+        wx.canvasToTempFilePath({
+          canvasId: 'myCanvas',
+          success: function(res) {
+            let path = res.tempFilePath;
+            wx.saveImageToPhotosAlbum({
+              filePath: path,
+              success(res) {
+                wx.hideLoading();
+                wx.showToast({
+                  title: '保存成功',
+                  duration: 2000
+                })
+              },
+              fail(res) {
+                wx.hideLoading();
+              },
+            })
+          },
+          fail: function(res){
+            wx.hideLoading();
+          },
+        })
+      },
+      entryIndex() {
+        wx.navigateTo({
+          url: 'index',
+        });
+      }
+    };
+    async _getCardImages(btn) {
+      const res = await api.getCardImages();
+      const data = res.data;
+      this.bgLine = data.bgLine;
+      if (btn) { // 如果是点击按钮切换，不区分radio
+        this.list = [...data.list2, ...data.list1];
+      } else { // 直接进入区分radio
+        if (this.value === '0') this.list = data.list2;
+        else this.list = data.list1;
+      }
+
+      let num = random_int(0, this.list.length - 1);
+      while (this.currentIndex === num) {
+        num = random_int(0, this.list.length - 1);
+      }
+      this.currentIndex = num;
+      this.canvasInit();
+      this.$apply();
+    }
+    canvasInit() {
+      const ctx = wx.createCanvasContext('myCanvas');
+      const url = this.list[this.currentIndex];
+      const width = this.windowWidth / 750 * 640;
+      const height = width * 1.33;
+      const self = this;
+      wx.downloadFile({
+        url,
+        success: function(res) {
+          const path = res.tempFilePath;
+          const name = self.name + '说：';
+          ctx.drawImage(path, 0, 0, width, height);
+          ctx.setFillStyle('#eac696');
+          ctx.setFontSize(15);
+          if (ctx.font) {
+            ctx.font = "normal normal 15px sans-serif";
+          }
+          ctx.setTextAlign('center');
+          ctx.fillText(name, width / 2, height * 0.23);
+          ctx.save();
+          const text = self.name + ' 在「刚好读书会」读完了';
+          ctx.setFillStyle('#a95705');
+          ctx.setFontSize(10);
+          if (ctx.font) {
+            ctx.font = "normal normal 10px sans-serif";
+          }
+          ctx.setTextAlign('center');
+          ctx.fillText(text, width / 2, height * 0.82);
+          ctx.draw()
+        },
+        fail: function(res){
+          
+        },
+      })
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $width: 640rpx;
+  $font-color: #a95705;
+  $btn-color: #eac696;
+  .card-container {
+    width: 750rpx;
+    height: 100vh;
+    background-size:100px 9.5px;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .myCanvas {
+      width: $width;
+      height: $width * 1.33;
+    }
+    .content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: $width;
+      .btn {
+        width: 48%;
+        height: 75rpx;
+        background: $btn-color;
+        color: white;
+        font-size: 28rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 50rpx;
+      }
+    }
+    .entry-btn {
+      color: $btn-color;
+      font-size: 25rpx;
+      margin-top: 50rpx;
+    }
+  }
+</style>

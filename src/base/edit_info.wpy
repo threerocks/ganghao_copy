@@ -1,0 +1,34 @@
+<template>
+  <view class="info-container" @tap="clickPurchase">
+    {{text}}
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class Index extends wepy.component {
+    props = {
+      text: String,
+    };
+    methods = {
+      clickPurchase() {
+        this.$emit('infoButton');
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .info-container {
+    width: 750rpx;
+    height: 100rpx;
+    background: #d19e69;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30rpx;
+    color: white;
+    font-weight: 300;
+  }
+</style>

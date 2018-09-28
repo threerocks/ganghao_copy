@@ -1,0 +1,342 @@
+<template>
+  <view class="container">
+    <view class="loading-container" wx:if="{{loading}}">
+      <loading></loading>
+    </view>
+    <view class="me-top">
+      <view class="avatar">
+        <image src="{{userInfo.avatarUrl}}" class="avatar-img"></image>
+      </view>
+      <view class="info">
+        <text>{{userInfo.nickName ? userInfo.nickName : ''}}</text>
+        <image src="../common/images/{{access ? 'vip' : 'vip_disable'}}.svg" class="vip-icon"></image>
+      </view>
+      <button open-type="getUserInfo" type="default" size="small" plain="{{plain}}" wx:if="{{!authorized}}" class="userinfo-button" @getuserinfo="clickGetUserInfo">点击获取昵称/头像</button>
+      <view class="vip" wx:if="{{!access}}">
+        <text>尚未开通会员</text>
+        <!-- <view class="purchase" @tap="clickVip">成为会员，免费畅听</view> -->
+      </view>
+    </view>
+    <view class="me-middle">
+      <view class="item" @tap="clickPurchased">我的已购<image src="../common/images/next.svg" class="next"></image></view>
+      <view class="item" @tap="clickCoupon">我的卡券<image src="../common/images/next.svg" class="next"></image></view>
+      <view class="item" @tap="clickSend">我的赠送
+        <!-- <button open-type='contact' session-from="send" class="service-item"></button> -->
+        <image src="../common/images/next.svg" class="next"></image>
+      </view>
+      <view class="item" wx:if="{{admin}}" @tap.stop="preview">文章预览<image src="../common/images/next.svg" class="next"></image></view>
+
+    </view>
+    <view class="me-bottom">
+      <view class="item">联系我们
+        <button open-type='contact' session-from="about-us" class="service-item"></button>
+        <image src="../common/images/next.svg" class="next" />
+      </view>
+    </view>
+    <showToast class="show-toast" :content="getContent" wx:if="{{hiddenToast === 1}}"></showToast>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import Loading from '@/base/loading';
+  import ShowToast from '@/base/show-toast';
+  import global from '@/common/js/global';
+  import {checkAuth} from '@/common/js/func';
+
+  export default class Index extends wepy.component {
+    data = {
+      userInfo: {},
+      access: false,
+      cardId: -1,
+      coupons: [],
+      loading: true,
+      hiddenToast: 0,
+      admin: false,
+      authorized: false,
+      firstLoad: true,
+    };
+    props = {
+      showRefersh: {
+        default: false,
+        type: Boolean,
+        twoWay: true,
+      },
+      tabIndex: {
+        default: -1,
+        type: Number,
+      }
+    };
+    components= {
+      loading: Loading,
+      showToast: ShowToast,
+    };
+    onLoad() {
+      this._checkAuth();
+      //this._getUserInfo();
+    };
+    // onShow() {
+    //   this._getUserInfo();
+    // };
+    // onPullDownRefresh() {
+    //   this._getUserInfo();
+    //   wx.stopPullDownRefresh();
+    // };
+    computed = {
+      getContent() {
+        return '老板，您好！\n赠送功能尚未正式开放，\n请加 刚好君微信\n(ID：ganghaojun)\n开启私人订制赠送吧。'
+      },
+      getContact() {
+        const nickName = this.userInfo.nickName ? this.userInfo.nickName : '';
+        const avatarUrl = this.userInfo.avatarUrl ? this.userInfo.avatarUrl : '';
+        return `{"nickName":"${nickName}" ,"avatarUrl":"${avatarUrl}"}`;
+      }
+    }
+    methods = {
+      clickVip() {
+        wx.navigateTo({
+          url: `ganghao`,
+        });
+      },
+      clickPurchased() {
+        if (!this.userInfo.id) return;
+        wx.navigateTo({
+          url: `bought?userId=${this.userInfo.id}`,
+        });
+      },
+      clickCoupon() {
+        if (!this.userInfo.id) return;
+        wx.navigateTo({
+          url: `coupon?userId=${this.userInfo.id}`,
+        });
+      },
+      clickClear() {
+        wx.clearStorageSync();
+        wx.showToast({
+          title: '清除成功',
+          duration: 2000
+        })
+      },
+      preview() {
+        wx.navigateTo({
+          url: `articlePreview`,
+        });
+      },
+      clickSend() {
+        this.hiddenToast = 1; 
+      },
+      clickAbout() {
+      },
+      clickGetUserInfo(e) {
+        const detail = e.detail;
+        if (detail.errMsg === 'getUserInfo:ok') {
+          const rawData = JSON.parse(detail.rawData);
+          const userInfo = this.userInfo;
+          const data = {
+            nickName: rawData.nickName,
+            avatarUrl: rawData.avatarUrl,
+            gender: rawData.gender,
+            country: rawData.country,
+            province: rawData.province,
+            city: rawData.city,
+            language: rawData.language,
+          }
+          this._upodateUserInfo(userInfo.id, data);
+          this._getUserInfo(true);
+          this.authorized = true;
+        }
+      }
+    };
+    events = {
+      clickToastSpace($event) {
+        this.hiddenToast = 2;
+      },
+      clickToastButton($event) {
+        this.hiddenToast = 2;
+      },
+    };
+    watch = {
+      userInfo(newUserInfo) {
+        if (!newUserInfo.id) {
+          this._getUserInfo();
+        }
+      },
+      showRefersh(newValue) {
+        if (newValue && !this.firstLoad) {
+          this._getUserInfo(true);
+          this.showRefersh = false;
+        }
+        this.firstLoad = false;
+      },
+      tabIndex(index) {
+        if (+index === 2) {
+          if (!this.userInfo.id) {
+            this._getUserInfo();
+          }
+        }
+      }
+    }
+
+    async _getUserInfo(refresh) {
+      this.userInfo = await api.getUserInfo(refresh);
+      if (this.userInfo.id) {
+        this.loading = false;
+        if (this.userInfo.admin) this.admin = true;
+        this.$apply();
+        this._getVipInfo(this.userInfo.id);
+      }
+    };
+
+    async _upodateUserInfo(id, data) {
+      await api.updateUser(id, data);
+      this.userInfo = await api.getUserInfo();
+      this.$apply();
+    };
+
+    async _getVipInfo(id) {
+      const info = await api.getVipInfo(id);
+      if (info.data) this.access = true;
+      else this.access = false;
+      this.$apply();
+    }
+    async _deleteVipInfo(id) {
+      const info = await api.deleteVipInfo(id);
+      wx.showToast({
+        title: '删除成功',
+        icon: 'success',
+        duration: 2000
+      })
+      this.$apply();
+    }
+
+    async _checkAuth() {
+      const result = await checkAuth();
+      this.authorized = result;
+      this.$apply();
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $avatar-size: 120rpx;
+  $bg-color: #f0eff5;
+  $font-size: 30rpx;
+  $bt-color: #d19e69;
+  .container {
+    background-color: $bg-color;
+    height: 100vh;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    .loading-container {
+      position: absolute;
+      width: 750rpx;
+      height: 100vh;
+      background: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .me-top, .me-middle, .me-bottom {
+      background: white;
+      width: 100%;
+    }
+    .me-top {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .avatar {
+        width: $avatar-size;
+        height: $avatar-size;
+        background-color: $bg-color;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 30rpx 0;
+        .avatar-img {
+          width: $avatar-size;
+          height: $avatar-size;
+        }
+      }
+      .info {
+        font-size: $font-size * 1.2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30rpx;
+        .vip-icon {
+          width: $font-size * 1.8;
+          height: $font-size * 1.8;
+          margin-left: 15rpx;
+        }
+      }
+      .userinfo-button {
+        width: 250rpx;
+        border: $bt-color;
+        color: $bt-color;
+        font-size: 22rpx;
+        margin-bottom: 30rpx;
+      }
+      .vip {
+        width: 90%;
+        padding: 30rpx 0;
+        border-top: 1px solid $bg-color;
+        font-size: $font-size * 0.8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .purchase {
+          padding: 12rpx 30rpx ;
+          background: $bt-color;
+          color: white;
+          border-radius: 50rpx;
+        }
+      }
+    }
+
+    .me-middle, .me-bottom {
+      margin-top: 30rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      font-size: $font-size;
+      .item {
+        width: 90%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: $font-size * 2;
+        padding: 15rpx 0;
+        position: relative;
+        &:not(:last-child) {
+          border-bottom: 1px solid $bg-color;
+        }
+        .next {
+          width: $font-size * 0.8;
+          height: $font-size * 0.8;
+        }
+        .service-item {
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          position: absolute;
+          z-index: 50;
+          top: 0;
+          left: 0;
+        }
+      }
+    }
+  }
+  .show-toast {
+    position: fixed;
+    top: 0;
+    z-index: 200;
+  }
+</style>

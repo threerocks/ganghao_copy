@@ -1,0 +1,216 @@
+<template>
+  <view class="view-container">
+    <view class="banner-container">
+      <swiper indicator-dots="{{indicatorDots}}"
+        autoplay="{{autoplay}}" interval="{{interval}}" duration="{{duration}}" class="banner" >
+        <block wx:for="{{banners}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+          <swiper-item>
+            <image src="{{item.url}}" class="banner" @tap="selectBanner({{item}})"/>
+          </swiper-item>
+        </block>
+      </swiper>
+    </view>
+    <view class="shelf-header" @tap="showModal">
+      <view class="left">
+        <image src="../common/images/book-icon.png" class="book-icon" />
+        <text>往期书单</text>
+      </view>
+      <view class="right">
+        <text>点击封面查看详情</text>
+      </view>
+    </view>
+    <view class="shelf">
+      <block wx:for="{{books}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+        <view class="shelf-layer">
+          <block wx:for="{{item}}" wx:key="index2" wx:for-index="index2" wx:for-item="book">
+            <view class="book" @tap="select({{book.id}})">
+              <image src="{{cdn + book.cover}}" mode="aspectFill" />
+            </view>
+          </block>
+        </view>
+      </block>
+      <view class="perch"></view>
+      <view class="perch" wx:if="{{showPlayer}}"></view>
+      <loading hidden="{{books.length}}" class="loading"></loading>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import Loading from '@/base/loading';
+  import {normalizeBooks} from '@/common/js/func';
+  import {cdn} from '@/common/js/config';
+
+  export default class Shelf extends wepy.component {
+    props = {
+      showPlayer: {
+        type: Boolean,
+        default: false,
+      }
+    }
+    components = {
+      loading: Loading,
+    };
+    data = {
+      banners: [],
+      books: [],
+      cdn,
+      indicatorDots: true,
+      autoplay: true,
+      interval: 3000,
+      duration: 1000,
+      platform: '',
+    };
+    
+    onLoad() {
+      const res = wx.getSystemInfoSync();
+      this.platform = res.platform;
+      this._getBanners();
+      this._getBooks();
+    };
+
+    methods = {
+      showModal() {
+      },
+      select(id) {
+        if (id === 6) {
+          wx.navigateTo({
+            url: `ganghao`,
+          });
+        } else if (id === 10) {
+          wx.navigateTo({
+            url: `join`,
+          });
+        } else if (id === 14) {
+          wx.navigateTo({
+            url: `wolf`,
+          });
+        } else if (id >= 11 && id <= 20) {
+          wx.navigateTo({
+            url: `special?id=${id}`,
+          });
+        } else {
+          wx.navigateTo({
+            url: `course?id=${id}`,
+          });
+        }
+      },
+      selectBanner(item) {
+        wx.navigateTo({
+          url: item.page,
+        });
+      },
+    };
+    async _getBanners() {
+      const banners = await api.getBanners();
+      if (banners.statusCode === 200) {
+        this.banners = banners.data;
+        this.$apply();
+      }
+    };
+
+    async _getBooks() {
+      const by = 'position';
+      const books = await api.getBooks(by);
+      if (books.statusCode === 200) {
+        if (this.platform === 'ios') {
+          const len = books.data.length;
+          for (let i = 0;i < len - 1; i++) {
+            const book = books.data[i];
+            if (book && book.id && +book.id === 6) {
+              books.data.splice(i, 1)
+            }
+          }
+        }
+        const data = normalizeBooks(books.data);
+        this.books = data;
+        this.$apply();
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .view-container {
+    $bg-color: #f0eff5;
+    $book-height: 250rpx;
+    $book-width: 250rpx;
+    $color-gradient-top: #D8D8D8;
+    $color-gradient-bottom: #EEEEEE;
+    .banner-container {
+      width: 100%;
+      height: 100%;
+      background-color: $bg-color;
+      .banner {
+        width: 100%;
+        height: 750rpx * 9 / 16;
+        display: block;
+      }
+    }
+    .shelf-header {
+      height: 90rpx;
+      background-color: #E4E4E4;
+      display: flex;
+      flex-flow: row nowrap;
+      .left {
+        width: 50%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding-left: 50rpx;
+        .book-icon {
+          width: 60rpx;
+          height: 40rpx;
+          margin-right: 50rpx;
+        }
+        text {
+          font-size: 30rpx;
+        }
+      }
+      .right {
+        width: 50%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding-right: 50rpx;
+        text {
+          font-size: 20rpx;
+        }
+      }
+    }
+    .shelf {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .perch {
+        width: 100%;
+        height: 100rpx;
+      }
+      .shelf-layer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 750rpx;
+        height: $book-height;
+        background-image: linear-gradient(0deg, $color-gradient-top 0%, $color-gradient-bottom 100%);
+        .book {
+          width: $book-width;
+          height: $book-height;
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          image {
+            width: $book-height * 0.8 * 0.666;
+            height: $book-height * 0.8;
+          }
+        }
+      }
+      .loading {
+        margin-top: $book-height;
+      }
+    }
+  }
+</style>

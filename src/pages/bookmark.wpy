@@ -1,0 +1,171 @@
+<template>
+  <view class="bookmark-container">
+    <view class="img-container">
+      <image src="{{imgUrl}}" class="bookmark-img" @tap.stop="clickImg" />
+      <text class="waring-text">* 轻点预览，转发原图 *</text>
+    </view>
+    <view class="buttons">
+      <view class="handle-container">
+        <view class="handle-item" @tap.stop="saveImg">保存</view>
+        <view class="handle-item" @tap.stop="sendImg">转发
+          <button open-type='share' class="share-item"></button>
+        </view>
+      </view>
+      <view class="reading-container" @tap.stop="reading">
+        我要读书
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import {cdn} from '@/common/js/config';
+  import moment from 'moment';
+
+  export default class Bookmark extends wepy.page {
+    onShareAppMessage(res) {
+      return {
+        title: '刚好读书会',
+        path: '/pages/bookmark',
+        imageUrl: this.imgUrl,
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    onShow() {
+      const self = this;
+      const date = moment(new Date()).format('YYYY-MM-DD');
+      api.getBookmark(date, date).then(data => {
+        if (data && data.data && data.data.length > 0) {
+          const img = data.data[0].img_url;
+          self.imgUrl = `${cdn}${img}`;
+          self.adFlag = 1;
+          self.$apply();
+        }
+      })
+    };
+    data = {
+      imgUrl: '',
+    };
+    methods = {
+      clickImg() {
+        wx.previewImage({
+          urls: [this.imgUrl] // 需要预览的图片http链接列表
+        })
+      },
+      saveImg() {
+        const self = this;
+        wx.downloadFile({
+          url: self.imgUrl,
+          success: function(res) {
+            let path = res.tempFilePath;
+            wx.saveImageToPhotosAlbum({
+              filePath: path,
+              success(res) {
+                wx.showToast({
+                  title: '保存成功',
+                  duration: 2000
+                })
+              },
+              fail(res) {
+
+              },
+            })
+          },
+          fail: function(res){
+            self.saveItem = false;
+            self.$apply();
+          }
+        })
+      },
+      sendImg() {
+        this.onShareAppMessage();
+      },
+      reading() {
+        wx.navigateTo({
+          url: `index`,
+        });
+      },
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $ratio: 0.7768;
+  $width: 675rpx;
+  $color: #d19e69;
+  $btn-height: 75rpx;
+  $font-size: 30rpx;
+  .bookmark-container {
+    background: #f0f0f0;
+    width: 750rpx;
+    height: 100vh;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .img-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .bookmark-img {
+      width: $width;
+      height: $width / $ratio;
+      margin-top: (750rpx - $width) / 2;
+    }
+    .waring-text {
+      color: #848484;
+      font-size: 30rpx;
+      margin: 20rpx;
+    }
+  }
+  .buttons {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    font-size: $font-size;
+    .handle-container {
+      width: $width;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      .handle-item {
+        width: 300rpx;
+        height: $btn-height;
+        border: 1px solid $color;
+        text-align: center;
+        line-height: $btn-height;
+        color: $color;
+        border-radius: 10rpx;
+        position: relative;
+      }
+      .share-item {
+        width: 300rpx;
+        height: $btn-height;
+        position: absolute;
+        top: 0;
+        left: 0;
+        opacity: 0;
+      }
+    }
+    .reading-container {
+      width: $width;
+      height: $btn-height;
+      background: $color;
+      text-align: center;
+      line-height: $btn-height;
+      color: white;
+      margin: 25rpx 0;
+      border-radius: 10rpx;
+    }
+  }
+</style>

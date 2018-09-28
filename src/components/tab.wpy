@@ -1,0 +1,73 @@
+<template>
+  <view class="tab">
+    <view class="tab_item tab_message{{active == 0 ? ' active' : ''}}" @tap="change(0)">
+      <view class="item-container">
+        <image class="icon" src="../common/images/TODAY{{active == 0 ? '-active' : ''}}.png" mode="widthFix" ></image>
+      </view>
+    </view>
+    <view class="tab_item tab_contact{{active == 1 ? ' active' : ''}}" @tap="change(1)">
+      <view class="item-container">
+        <image class="icon" src="../common/images/READS{{active == 1 ? '-active' : ''}}.png" mode="widthFix" ></image>
+      </view>
+    </view>
+    <view class="tab_item tab_discovery{{active == 2 ? ' active' : ''}}" @tap="change(2)">
+      <view class="item-container">
+        <image class="icon" src="../common/images/MORE{{active == 2 ? '-active' : ''}}.png" mode="widthFix" ></image>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Tab extends wepy.component {
+    props = {
+      active: {
+        twoWay: true
+      }
+    };
+    data = {
+    };
+
+    methods = {
+      change (idx, evt) {
+        this.active = +idx;
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $fontcolor: #2c2c2c;
+  $activecolor: #6ea232;
+  .tab {
+    color: $fontcolor;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 100rpx;
+    width: 100%;
+    background-color: #FFFFFF;
+    font-size: 24rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .tab_item {
+      &.active {
+        color: $activecolor;
+      }
+      width: 375rpx;
+      height: 100%;
+      .item-container {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+    .icon {
+      width: 100rpx;
+    }
+  }
+</style>

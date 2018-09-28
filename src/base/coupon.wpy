@@ -1,0 +1,249 @@
+<template>
+  <view class="coupon-container" @tap.stop="clickSpace">
+    <view class="coupon-card" @tap.stop="clickCouponCard">
+      <view class="line coupon-card-title">
+        <text>{{title}}</text>
+        <text>{{desc}}</text>
+      </view>
+      <view class="line coupon">
+        <text>选择优惠券：</text>
+        <view class="coupon-info" @tap.stop="clickSelectCoupon">
+          <text>{{coupon.name}}</text>
+          <image src="../common/images/next.svg" class="coupon-info-next"/>
+        </view>
+      </view>
+      <view class="line price">
+        <text>支付金额：</text>
+        <view class="price-info">
+          <text>￥{{price}}</text>
+          <text>￥{{(price - coupon.price) > 0 ? price - coupon.price : 0.01}}</text>
+        </view>
+      </view>
+      <view class="line button">
+        <button disabled="{{disabled}}" class="coupon-purchase" @tap.stop="clickPurchase()">
+          微信支付
+        </button>
+      </view>
+    </view>
+    <view class="coupon-list" wx:if="{{couponListStatus}}">
+      <couponList :coupons.sync="coupons"></couponList>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import CouponList from '@/base/coupon-list';
+
+  export default class Coupon extends wepy.component {
+    props = {
+      title: String,
+      desc: String,
+      coupons: Array,
+      price: {
+        type: Number,
+        default: 0,
+      },
+    };
+    data = {
+      coupon: {},
+      couponListStatus: false,
+      disabled: false,
+    }
+    components = {
+      couponList: CouponList,
+    }
+    methods = {
+      clickSpace() {
+        this.$emit('clickCouponSpace');
+      },
+      clickPurchase() {
+        this.disabled = true;
+        if (this.coupon && this.coupon.price) {
+          const price = (this.price - this.coupon.price) > 0 ? this.price - this.coupon.price : 0.01
+          this.$emit('clickCouponPurchase', price, this.coupon.id);
+        } else {
+
+        }
+        setTimeout(() => {
+          this.disabled = false;
+          this.$apply();
+        }, 1000);
+      },
+      clickCouponCard() {
+  
+      },
+      clickSelectCoupon() {
+        this.couponListStatus = true;
+      }
+    };
+    events = {
+      selectCoppon(item, $event) {
+        this.coupon = item;
+        this.couponListStatus = false;
+        this.$apply();
+      }
+    };
+    watch = {
+      coupons(newList) {
+        this.coupon = newList[0];
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: rgba(0,0,0,0.6);
+  $line-color: #f0eff5;
+  $font-size: 30rpx;
+  $bt-color: #d19e69;
+  $sub-tetx-color: #848484;
+  .coupon-container {
+    position: relative;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    width: 750rpx;
+    height: 100vh;
+    z-index: 9000;
+    background: $bg-color;
+    animation: bg 0.1s ease-in-out;
+    .coupon-list {
+      width: 750rpx;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: auto;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: white;
+      z-index: 300;
+    }
+    .coupon-card {
+      width: 97%;
+      height: 40%;
+      background: white;
+      // position: absolute;
+      // bottom: 11.25rpx;
+      margin-bottom: 11.25rpx;
+      border-radius: 20rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      align-items: center;
+      animation: card 0.3s ease-in-out;
+      .line {
+        width: 90%;
+        border-top: 1px solid $line-color;
+      }
+      .coupon-card-title, .button {
+        height: 30%;
+      }
+      .coupon, .price {
+        height: 20%;
+      }
+      .coupon-card-title {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: flex-start;
+        text:first-child {
+          font-size: 35rpx;
+          text-align: left;
+        }
+        text:last-child {
+          font-size: 23rpx;
+          color: $sub-tetx-color;
+          margin: 10rpx 0 0 0;
+        }
+      }
+      .coupon {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text {
+          font-size: $font-size;
+          color: $sub-tetx-color;
+        }
+        .coupon-info {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: $font-size * 0.8;
+          text {
+            color: $bt-color;
+          }
+          .coupon-info-next {
+            width: $font-size * 0.8;
+            height: $font-size * 0.8;
+            margin-left: 10rpx;
+          }
+        }
+      }
+      .price {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text {
+          font-size: $font-size;
+          color: $sub-tetx-color;
+        }
+        .price-info {
+          text {
+            font-size: 35rpx;
+          }
+          text:first-child {
+            text-decoration: line-through;
+          }
+          text:last-child {
+            color: black;
+            margin-left: 30rpx;
+          }
+        }
+      }
+      .button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        button::after{
+          border: none;
+        }
+        .coupon-purchase {
+          font-size: $font-size;
+          width: 100%;
+          height: 55%;
+          color: white;
+          background: $bt-color;
+          border-radius: 10rpx;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          border: none;
+          padding: 0;
+        }
+      }
+    }
+  }
+  @keyframes bg {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes card {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+</style>

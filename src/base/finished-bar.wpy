@@ -1,0 +1,34 @@
+<template>
+  <view class="finish-container" @tap="clickPurchase">
+    {{text}}
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class Index extends wepy.component {
+    props = {
+      text: String,
+    };
+    methods = {
+      clickPurchase() {
+        this.$emit('finishButton');
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .finish-container {
+    width: 750rpx;
+    height: 100rpx;
+    background: #9b9b9b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 30rpx;
+    color: white;
+    font-weight: 300;
+  }
+</style>

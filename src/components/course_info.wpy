@@ -1,0 +1,382 @@
+<template>
+  <view class="course-info">
+    <view class="other" wx:if="{{bookInfo.other.isRequired}}">
+      <text class="other-text">{{bookInfo.other.text}}</text>
+      <image src="{{staticImgList[2].url}}" class="other-image" mode="widthFix"></image>
+    </view>
+    <view class="introduction item" wx:if="{{bookInfo.introduction.isRequired}}">
+      <view class="text-bg">
+        <text space="emsp" class="sub-title">先听为快</text>
+      </view>
+      <view class="introduction-player">
+        <player :poster.sync="poster" :src.sync="songSrc" :name.sync="songName" :normal="getNormalConfig"></player>
+      </view>
+      <image src="{{bookInfo.introduction.pic}}" class="introduction-image" mode="widthFix"></image>
+    </view>
+    <view class="excerpts item" wx:if="{{bookInfo.excerpts.isRequired}}">
+      <view class="text-bg">
+        <text space="emsp" class="sub-title">书摘</text>
+      </view>
+      <view wx:for="{{bookInfo.excerpts.excerpts}}" wx:key="index" wx:for-index="index" wx:for-item="item" class="excerpts-content">
+        <text class="excerpt-en">{{item.en}}</text>
+        <text class="excerpt-ch">{{item.ch}}</text>
+        <view class="line" hidden="{{!item.line}}"></view>
+      </view>
+    </view>
+    <view class="review item" wx:if="{{bookInfo.review.isRequired}}">
+      <view class="text-bg">
+        <text space="emsp" class="sub-title">书评</text>
+      </view>
+      <view wx:for="{{bookInfo.review.review}}" wx:key="index" wx:for-index="index" wx:for-item="item" class="review-content">
+        <text class="review-text">{{item}}</text>
+      </view>
+    </view>
+    <view class="qa item" wx:if="{{bookInfo.qa.isRequired}}">
+      <view class="text-bg">
+        <text space="emsp" class="sub-title">Q&A</text>
+      </view>
+      <view class="qa-image">
+        <image src="{{platform !== 'ios' ? staticImgList[0].url :  staticImgList[2].url}}" class="qa-image"></image>
+      </view>
+    </view>
+    <view class="member item" wx:if="{{bookInfo.member.isRequired}}">
+      <view class="text-bg">
+        <text space="emsp" class="sub-title">刚好 | 双语读书会</text>
+      </view>
+      <view class="member-image">
+        <image src="{{platform !== 'ios' ? staticImgList[1].url :  staticImgList[3].url}}" class="member-image"></image>
+      </view>
+    </view>
+
+    <perch></perch>
+
+    <purchase :leftText.sync="leftText"
+              :rightText.sync="rightText"
+              :type.sync="purchaseType"
+    ></purchase>
+
+    <view wx:if="{{hasCoupon}}" class="coupon-page">
+      <coupon :title.sync="title"
+              :desc.sync="subTitle"
+              :coupons.sync="couponList"
+              :price.sync="price"
+      ></coupon>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  import api from '@/common/js/api';
+  import {vipPrice} from '@/common/js/config';
+  import Perch from '@/base/perch';
+  import PlayerInner from '@/base/player-inner';
+  import Coupon from '@/base/coupon';
+  import Purchase from '@/base/purchase';
+
+  export default class CourseInfo extends wepy.component {
+    props = {
+      bookInfo: {},
+    };
+    data = {
+      staticImgList: [],
+      poster: '',
+      songSrc: '',
+      songName: '',
+      purchaseType: 0,
+      rightText: '',
+      leftText: '',
+      hasCoupon: false,
+      couponList: [],
+      title: '',
+      subTitle: '',
+      price: 0,
+      platform: '',
+    };
+    components = {
+      perch: Perch,
+      player: PlayerInner,
+      purchase: Purchase,
+      coupon: Coupon
+    };
+    computed = {
+      getNormalConfig() {
+        return false;
+      }
+    };
+    events = {
+      purchase: ($event) => {
+        this._purchase('right');
+      },
+      purchaseLeft: ($event) => {
+        this._purchase('left');
+      },
+      clickCouponSpace: ($event) => {
+        this.hasCoupon = false;
+        this.$apply();
+      },
+      clickCouponPurchase: (price, id, $event) => {
+        this._purchase('left', price, id);
+      },
+    };
+
+
+    async _purchase(position, price, couponId) {
+      if (this.platform === 'ios') {
+        return;
+      }
+      if (this.bookInfo.purchase_type === 1) {
+        wx.navigateTo({
+          url: `ganghao?bookId=${this.bookInfo.id}`
+        });
+        return;
+      } else if (this.bookInfo.purchase_type === 2 && position === 'right') {
+        wx.navigateTo({
+          url: `ganghao?bookId=${this.bookInfo.id}`
+        });
+        return;
+      }
+      const self = this;
+      const userInfo = await api.getUserInfo();
+      let totalFee = this.bookInfo.price ? this.bookInfo.price : 1;
+      if (price) totalFee = price;
+      const coupons = await api.getCouponPurchase(userInfo.id, totalFee, this.bookInfo.book_id);
+      if (!this.hasCoupon && coupons && coupons.data.length > 0) {
+        this.couponList = coupons.data;
+        this.hasCoupon = true;
+        this.$apply();
+
+        return;
+      }
+      let goods = this.bookInfo && this.bookInfo.title && this.bookInfo.title.isRequired ? this.bookInfo.title.title : '';
+      let paymentType = 0;
+      totalFee = totalFee * 100;
+      const bookId = this.bookInfo.book_id;
+      const result = await api.unifiedorder({
+        userId: userInfo.id,
+        openid: userInfo.openid,
+        bookId,
+        paymentType,
+        goods, 
+        totalFee,
+      });
+      const payObj = {
+        timeStamp: result.data.timeStamp,
+        nonceStr: result.data.nonce_str,
+        package: result.data.prepayId,
+        signType: 'MD5',
+        paySign: result.data.paySign,
+        success: function (res) {
+          const data = {
+            id: result.data.id,
+            bookId,
+            userId: userInfo.id,
+            orderId: result.data.out_trade_no,
+            paymentType,
+          };
+          api.paymentSuccess(data).then(res => {
+            self.hasCoupon = false;
+            self.$apply();
+            if (couponId) {
+              api.setCouponUsed(couponId).then(res => {
+                wx.redirectTo({
+                  url: `course?id=${bookId}`
+                });
+              }).catch(e => console.error(e));
+            }
+          }).catch(e => console.error(e));
+        },
+        fail: function (res) {
+          self.hasCoupon = false;
+          self.$apply();
+        }
+      }
+      wx.requestPayment(payObj)
+    }
+
+    onLoad(option) {
+      const res = wx.getSystemInfoSync();
+      this.platform = res.platform;
+      this._getCourseStaticImg();
+    };
+    async _getCourseStaticImg() {
+      const list = await api.getCourseStaticImg();
+      if (list.statusCode === 200) {
+        this.staticImgList = list.data;
+        this.$apply();
+      }
+    };
+    watch = {
+      bookInfo(newBookInfo) {
+        if (this.platform === 'ios') {
+          this.purchaseType = 1;
+          this.rightText = `你还没有课程权限或者会员权限`;
+        } else {
+          this.purchaseType = newBookInfo.purchase_type;
+          switch(this.purchaseType) {
+            case 0:
+              this.rightText = `立即购买 ￥${newBookInfo.price}`;
+              break;
+            case 1:
+              this.rightText = `成为会员，免费畅听`;
+              break;
+            case 2:
+              this.leftText = `立即购买 ￥${newBookInfo.price}`;
+              this.rightText = `成为会员，免费畅听`;
+              break;
+            default: 
+              break;
+          }
+        }
+        if (newBookInfo.title && newBookInfo.title.isRequired) {
+          this.title = newBookInfo.title.title;
+          this.subTitle = newBookInfo.title.subTitle;
+        }
+        if (newBookInfo.introduction && newBookInfo.introduction.isRequired) {
+          const audio = newBookInfo.introduction.audio;
+          this.poster = audio.avatar;
+          this.songName = audio.song;
+          this.songSrc = audio.url;
+        }
+        this.price = newBookInfo.price;
+        this.$apply();
+      },
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $font-color: #2c2c2c;
+  $font-size: 30rpx;
+  $font-size-s: 28rpx;
+  $text-height: 50rpx;
+  $bg-color: #f0eff5;
+  $line-color: #979797;
+  .course-info {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .coupon-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9000;
+    }
+    .other {
+      width: 750rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      margin: 20rpx 0;
+      .other-text {
+        text-align: center;
+        font-size: $font-size;
+        font-weight: 300;
+      }
+      .other-image {
+        width: 100%;
+        margin: 20rpx 0 0 0;
+      }
+    }
+    .introduction {
+      width: 750rpx;
+
+      .introduction-image {
+        width: 80%;
+        margin: 40rpx 0 0 0;
+      }
+    }
+    .excerpts {
+      width: 750rpx;
+      .excerpts-content {
+        width: 85%;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        .excerpt-en {
+          font-size: $font-size;
+          font-weight: 400;
+          line-height: 2;
+        }
+        .excerpt-ch {
+          font-size: $font-size-s;
+          font-weight: 300;
+        }
+        .line {
+          width: 15%;
+          height: 1px;
+          background: $line-color;
+          margin: 40rpx 0;
+        }
+      }
+    }
+    .review {
+      width: 750rpx;
+      .review-content {
+        width: 85%;
+        .review-text {
+          font-size: $font-size-s;
+          font-weight: 300;
+          line-height: 2;
+        }
+      }
+    }
+    .item {
+      width: 100%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 50rpx; 
+    }
+    .text-bg {
+      position: relative;
+      width: 90%;
+      height: $text-height;
+      margin: 40rpx 0;
+      &::before {
+        content: '';
+        display: block;
+        width: 95%;
+        height: 1px;
+        background-color: $font-color;
+        position: absolute;
+        top: $text-height / 2;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    }
+    .sub-title {
+      display: block;
+      text-align: center;
+      background-color: white;
+      width: 42%;
+      font-size: $font-size;
+      font-weight: 300;
+      padding: 0 20rpx;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .qa {
+      .qa-image {
+        width: 720rpx;
+        height: 1934.5rpx;
+        background-color: $bg-color; 
+      }
+    }
+    .member {
+      .member-image {
+        width: 750rpx;
+        height: 1900rpx;
+        background-color: $bg-color; 
+      }
+    }
+  }
+</style>

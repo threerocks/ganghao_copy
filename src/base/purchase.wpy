@@ -1,0 +1,178 @@
+<template>
+  <view class="purchase">
+    <block wx:if="{{type === -1}}">
+      <button disabled="{{disabled}}" class="init purchase-left" @tap="clickPurchaseLeft">{{leftText}}</button>
+      <button disabled="{{disabled}}" class="init purchase-right" @tap="clickPurchase">{{rightText}}</button>
+      <!-- <view class="trial member-trial" @tap="clickTrial">7天体验</view> -->
+    </block>
+    <block wx:if="{{type === 0}}">
+      <button disabled="{{disabled}}" class="init purchase-single" @tap="clickPurchase">{{rightText}}</button>
+    </block>
+    <block wx:if="{{type === 1}}">
+      <button disabled="{{disabled}}" class="init purchase-member" @tap="clickPurchase">{{rightText}}</button>
+    </block>
+    <block wx:if="{{type === 2}}">
+      <button disabled="{{disabled}}" class="init purchase-mix-left" @tap="clickPurchaseLeft">{{leftText}}</button>
+      <button disabled="{{disabled}}" class="init purchase-mix-right" @tap="clickPurchase">{{rightText}}</button>
+      <!-- <view class="trial" @tap="clickTrial">体验会员</view> -->
+    </block>
+    <button open-type="getUserInfo" type="default" size="small" plain="{{plain}}" wx:if="{{!authorized}}" class="userinfo-button" @getuserinfo="clickGetUserInfo">点击获取昵称/头像</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import random from 'string-random';
+  import api from '@/common/js/api';
+  import {checkAuth} from '@/common/js/func';
+
+  export default class Purchase extends wepy.component {
+    props = {
+      leftText: String,
+      rightText: String,
+      type: {
+        type: Number,
+        default: -1
+      },
+    };
+    data = {
+      authorized: false,
+      disabled: false,
+    };
+    onLoad() {
+      this._checkAuth();
+    }
+
+    methods = {
+      clickPurchase() {
+        this.disabled = true;
+        this.$emit('purchase');
+        setTimeout(() => {
+          this.disabled = false;
+          this.$apply();
+        }, 1000);
+      },
+      clickPurchaseLeft() {
+        this.disabled = true;
+        this.$emit('purchaseLeft');
+        setTimeout(() => {
+          this.disabled = false;
+          this.$apply();
+        }, 1000);
+      },
+      clickTrial() {
+        this.$emit('trial');
+      },
+      clickGetUserInfo(e) {
+        const detail = e.detail;
+        if (detail.errMsg === 'getUserInfo:ok') {
+          const rawData = JSON.parse(detail.rawData);
+          const data = {
+            nickName: rawData.nickName,
+            avatarUrl: rawData.avatarUrl,
+            gender: rawData.gender,
+            country: rawData.country,
+            province: rawData.province,
+            city: rawData.city,
+            language: rawData.language,
+          }
+          this._upodateUserInfo(data);
+          this.authorized = true;
+        }
+      }
+    };
+    async _upodateUserInfo(data) {
+      const userInfo = await api.getUserInfo(true);
+      await api.updateUser(userInfo.id, data);
+      this.$apply();
+    };
+    async _checkAuth() {
+      const result = await checkAuth();
+      this.authorized = result;
+      this.$apply();
+    }
+    watch = {
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $height: 100rpx;
+  .purchase {
+    width: 750rpx;
+    height: $height;
+    display: flex;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    font-size: 30rpx;
+    color: white;
+    font-weight: 300;
+    z-index: 1000;
+    .init {
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      font-size: inhert;
+      color: white;
+      font-weight: 300;
+    }
+    button::after{
+      border: none;
+    }
+    .userinfo-button {
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      margin: auto;
+      opacity: 0;
+    }
+    .purchase-left, .purchase-right, .purchase-single, .purchase-member, .purchase-mix-left, .purchase-mix-right, .trial {
+      line-height: $height;
+      text-align: center;
+    }
+    .purchase-left {
+      width: 65%;
+      height: 100%;
+      background-color: #ededed;
+      color: #555555;
+    }
+    .purchase-right {
+      width: 35%;
+      height: 100%;
+      background-color: #d19e69;
+    }
+    .member-trial {
+      width: 22.7% !important;
+    }
+    .purchase-single {
+      width: 100%;
+      height: 100%;
+      background-color: #d19e69;
+    }
+    .purchase-member {
+      width: 100%;
+      height: 100%;
+      background-color: #d19e69;
+    }
+    .purchase-mix-left {
+      width: 40%;
+      height: 100%;
+      background-color: #ededed;
+      color: #301a1a;
+      display: block;
+    }
+    .purchase-mix-right {
+      width: 60%;
+      height: 100%;
+      background-color: #d19e69;
+      display: block;
+    }
+    .trial {
+      width: 22.7%;
+      height: 100%;
+      background: #ed544d;
+      color: white;
+      display: block;
+    }
+  }
+</style>

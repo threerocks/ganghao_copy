@@ -1,0 +1,581 @@
+<template>
+  <view class="share-container" @tap.stop="clickCard">
+    <view class="share-pic">
+      <view class="share-pic-item">
+        <image src="{{imgSrc}}" mode="widthFix" class="share-pic-img" />
+      </view>
+      <view class="share-canvas-item">
+        <canvas canvas-id="articleCanvas" style="width: {{articleCanvasWidth}}px; height: {{articleCanvasHeight}}px" class="myCanvas"/>
+      </view>
+      <view class="share-canvas-item">
+        <canvas canvas-id="textCanvas" style="width: {{textCanvasWidth}}px; height: {{textCanvasHeight}}px" class="myCanvas"/>
+      </view>
+      <view class="share-canvas-item">
+        <canvas canvas-id="imgCanvas" style="width: {{textCanvasWidth}}px; height: {{textCanvasHeight}}px" class="myCanvas"/>
+      </view>
+      <!-- <image wx:if="{{type === 2}}" src="{{imgSrc}}" mode="widthFix" class="share-pic-item" />
+      <canvas wx:if="{{type === 1}}" canvas-id="articleCanvas" style="width: {{articleCanvasWidth}}px; height: {{articleCanvasHeight}}px" class="myCanvas"/> -->
+      <!-- <canvas wx:if="{{type === 3}}" canvas-id="textCanvas" class="myCanvas"/> -->
+    </view>
+    <view class="share-info">
+      <text class="share-text share-text-top">分享</text>
+      <view class="share-icon-container">
+        <view class="share-icon-item" @tap.stop="clickCreateImg">
+          <image src="../common/images/download.svg" mode="widthFix" class="share-pic-item" />
+          <text class="share-text">生成分享海报</text>
+        </view>
+        <view class="share-icon-item" @tap.stop="clickShare">
+          <image src="../common/images/wechat.svg" mode="widthFix" class="share-pic-item" />
+          <text class="share-text">转发给好友</text>
+          <button open-type="share" class="share-btn" data-img="{{sharePic}}" data-path="{{sharePath}}" data-title="{{shareTitle}}"></button>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import {getImageInfo, downloadFile, canvasToTempFilePath} from '@/common/js/func';
+  import moment from 'moment';
+
+  export default class Share extends wepy.component {
+    props = {
+      showShare: {
+        type: Boolean,
+        default: false,
+        twoWay: true,
+      },
+      imgSrc: {
+        type: String,
+        default: '',
+        twoWay: true,
+      },
+      type: {
+        type: Number,
+        default: 0,
+        twoWay: true,
+      },
+      articleType: { // 0为课程文章，1为今日文章
+        type: Number,
+        default: -1,
+      },
+      articleId: {
+        type: Number,
+        default: 100,
+      },
+      bookId: {
+        type: Number,
+        default: -1,
+      },
+      sharePath: {
+        type: String,
+        default: '',
+      },
+      shareImg: {
+        type: String,
+        default: '',
+      },
+      shareTitle: {
+        type: String,
+        default: '',
+      },
+      textTitle: {
+        type: String,
+        default: '',
+      },
+      textContent: {
+        type: String,
+        default: '',
+      },
+      textRemark: {
+        type: String,
+        default: '',
+      },
+      textBgColor: {
+        type: String,
+        default: '',
+      },
+      textColor: {
+        type: String,
+        default: '',
+      },
+      subText: {
+        type: String,
+        default: '读了这篇文章',
+      },
+      userInfo: {
+        type: Object,
+        default: {},
+      },
+    };
+    data = {
+      articleCanvasWidth: 414,
+      articleCanvasHeight: 736,
+      textCanvasWidth: 414,
+      textCanvasHeight: 736,
+      sharePic: '',
+      itemType: 0,
+    }
+    onLoad() {
+      this.windowWidth = wx.getSystemInfoSync().windowWidth;
+      this.articleCanvasWidth = this.windowWidth;
+      this.textCanvasWidth = this.windowWidth;
+      this.windowHeight = wx.getSystemInfoSync().windowHeight;
+    };
+    methods = {
+      clickCard() {
+        this.showShare = false;
+        wx.hideLoading();
+      },
+      clickCreateImg() {
+        //this._saveImg(this.imgSrc)
+        if (+this.itemType === 2) {
+          this._saveCanvas('imgCanvas')
+        } else if(+this.itemType === 1) {
+          this._saveCanvas('articleCanvas')
+        } else if(+this.itemType === 3) {
+          this._saveCanvas('textCanvas')
+        }
+      },
+    }
+    events = {
+
+    }
+    computed = {
+      getIdString() {
+        return `${this.type}-${this.id}`;
+      }
+    };
+    watch = {
+      type(newVal) {
+        if (+newVal === 1) {
+          this.itemType = 1;
+          setTimeout(() => {
+            this._articleCanvasInit();
+          }, 200)
+        } 
+        if (+newVal === 2) {
+          this.itemType = 2;
+          setTimeout(() => {
+            this._imgCanvasInit();
+          }, 200)
+        } 
+        if (+newVal === 3) {
+          this.itemType = 3;
+          setTimeout(() => {
+            this._textCanvasInit();
+          }, 200)
+        } 
+        this.type = 0;
+        this.$apply();
+      },
+      showShare(val) {
+        if (!val) {
+          this.imgSrc = '';
+          this.$apply();
+        }
+      },
+      imgSrc(val) {
+        
+      },
+      shareImg(val) {
+        this.sharePic = val;
+        this.$apply();
+      }
+    };
+    async _articleCanvasInit() {
+      wx.showLoading({
+        title: '载入中...',
+      })
+      try {
+        const padding = 15;
+        const styleWidth = this.articleCanvasWidth;
+        let titleHeight = 230;
+        if (+this.articleType === 0) {
+          titleHeight = 110;
+        }
+        const contentHeight = titleHeight + 0.294 * (styleWidth - padding * 2) + padding;
+        const url = this.shareImg;
+        const res = await getImageInfo(url);
+        this.articleCanvasHeight = (styleWidth - 2 * padding) * res.height / res.width + contentHeight + padding;
+        this.$apply();
+        const styleHeight = this.articleCanvasHeight;
+        const ctx = wx.createCanvasContext('articleCanvas');
+
+        // 画背景
+        ctx.fillStyle = "#f4f4f4";
+        ctx.fillRect(0, 0, styleWidth, styleHeight);
+        
+        // 画内容背景
+        ctx.save();
+        ctx.setShadow(0, 0, 5, '#979797');
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(padding, padding, styleWidth - padding * 2, styleHeight - padding * 2);
+        ctx.restore();
+        // 画头图
+        const width = styleWidth - padding * 2;
+        const height = width * res.height / res.width;
+        // const topicImg = await getImageInfo(url);
+        ctx.drawImage(res.path, padding, padding, width, height);
+        const name = this.userInfo.nickName ? this.userInfo.nickName : '我';
+        const subText = this.subText;
+        const nameMetrics = ctx.measureText(name);
+        const subTextMetrics = ctx.measureText(subText);
+        const mainInfoWidth = 30 + nameMetrics.width + 50 + subTextMetrics.width + 55; // 头像宽度 + 名字宽度 + '刚好读书会'五个字宽度 + subText宽度 + 间隔
+        let mainInfostartX = (styleWidth - mainInfoWidth) / 2;
+        if (+this.articleType !== 0) {
+          mainInfostartX = padding + 50 ;
+        }
+        // 画头像
+        const avatar = this.userInfo.avatarUrl;
+        if (avatar) {
+          //const avatarImg = await downloadFile(avatar);
+          ctx.save();
+          ctx.arc(mainInfostartX + 15, padding + height + 55, 15, 0, 2 * Math.PI);
+          ctx.setFillStyle('#EEEEEE')
+          ctx.fill();
+          // 从画布上裁剪出这个圆形
+          ctx.clip();
+          const headimgRes = await api.getHeadimg(avatar, this.userInfo.id);
+          const headimg = await getImageInfo(headimgRes.data);
+          ctx.drawImage(headimg.path, mainInfostartX, padding + height + 40, 30, 30);
+          ctx.restore();
+        }
+        // 画标题
+
+        ctx.setFillStyle('#4a4a4a');
+        if (ctx.font) {
+          ctx.font = 'normal 300 11px "pingfang HK",sans-serif';
+        }
+        ctx.setTextAlign('left');
+        ctx.fillText(name, mainInfostartX + 40, padding + height + 60);
+        ctx.setFillStyle('#9b9b9b');
+        const metrics = ctx.measureText(name);
+        ctx.fillText('在',  mainInfostartX + 45 + metrics.width, padding + height + 60);
+        ctx.setFillStyle('#e5b56a');
+        ctx.fillText('刚好读书会', mainInfostartX + 65 + metrics.width, padding + height + 60);
+        ctx.setFillStyle('#9b9b9b');
+        ctx.fillText(this.subText,  mainInfostartX + 125 + metrics.width, padding + height + 60);
+        // 画标题
+        ctx.font = 'normal 400 20px "pingfang HK",sans-serif';
+        ctx.setFillStyle('#4a4a4a');
+        let title = this.shareTitle;
+        let lineWidth = 0;
+        let initWidth = padding + 50;
+        let initHeight = padding + height;
+        let lastSubStrIndex = 0;
+        const canvasWidth = styleWidth - padding * 2 - 100;
+        if (+this.articleType !== 0) {
+          initHeight = padding + height + 110;
+          for (let i = 0;i < title.length;i++) { 
+            lineWidth += ctx.measureText(title[i]).width; 
+            if (lineWidth > canvasWidth){  
+              ctx.fillText(title.substring(lastSubStrIndex, i), initWidth, initHeight);//绘制截取部分
+              initHeight += 30; // 30为字体的高度
+              lineWidth = 0;
+              lastSubStrIndex = i;
+            }
+            if (i == title.length - 1){ // 绘制剩余部分
+              ctx.fillText(title.substring(lastSubStrIndex, i + 1), initWidth, initHeight);
+            }
+          }
+          const date = moment().format('YYYY-MM-DD');
+          ctx.font = 'normal 300 12px "pingfang HK",sans-serif';
+          ctx.setFillStyle('#9b9b9b');
+          ctx.fillText(date, initWidth, initHeight + 40);
+        }
+        
+        // 画底图
+        const footerImgUrl = 'https://gh.rrdnyyy.com/books/book-cover-1531995916767.jpg';
+        const footerImg = await downloadFile(footerImgUrl);
+        ctx.drawImage(footerImg, padding, padding + height + titleHeight, styleWidth - padding * 2, 0.294 * (styleWidth - padding * 2));
+        
+        // 画二维码
+        let qrRes;
+        if (+this.articleType === 0) {
+          qrRes = await api.getQRImg(this.articleType, this.articleId, this.bookId);
+        } else if (+this.articleType === 1) {
+          qrRes = await api.getQRImg(this.articleType, this.articleId);
+        } else if (+this.articleType === -1) {
+          qrRes = await api.getQRImg(this.articleType, this.articleId);
+        }
+        if (qrRes && qrRes.data) {
+          const qrimg = await getImageInfo(qrRes.data);
+          ctx.drawImage(qrimg.path, padding + (styleWidth - padding * 2) * 0.66, padding + height + titleHeight + 0.0688 * (styleWidth - padding * 2), 0.1764 * (styleWidth - padding * 2), 0.1764 * (styleWidth - padding * 2));
+        }
+
+        ctx.draw();
+        const self = this;
+        setTimeout(() => {
+          canvasToTempFilePath('articleCanvas').then(path => {
+            self.imgSrc = path;
+            self.$apply();
+            wx.hideLoading();
+          });
+        }, 500);
+        // const path = await canvasToTempFilePath('articleCanvas');
+        // this.imgSrc = path;
+        // this.$apply();
+        // wx.hideLoading();
+      } catch (e) {
+        wx.hideLoading();
+      }
+    }
+    async _textCanvasInit() {
+      wx.showLoading({
+        title: '载入中...',
+      })
+      try {
+        const padding = 30;
+        const styleWidth = this.textCanvasWidth;
+        const footerImgHeight = 0.294 * styleWidth;
+        this.textCanvasHeight = footerImgHeight + 260;
+        const styleHeight = this.textCanvasHeight;
+        this.$apply();
+        const ctx = wx.createCanvasContext('textCanvas');
+        // 画背景
+        ctx.fillStyle = this.textBgColor;
+        ctx.fillRect(0, 0, styleWidth, styleHeight);
+        ctx.fillStyle = this.textColor;
+        // 画标题
+        const title = this.textTitle;
+        ctx.font = 'normal 400 28px "pingfang HK",sans-serif';
+        ctx.setTextAlign('left');
+        ctx.fillText(title, padding, 60);
+        
+        // 画内容
+        ctx.font = 'normal 300 18px "pingfang HK",sans-serif';
+        let content = this.textContent;
+        let lineWidth = 0;
+        let initWidth = padding;
+        let initHeight = 110;
+        let lastSubStrIndex = 0;
+        const canvasWidth = styleWidth - padding * 2;
+        for (let i = 0;i < content.length;i++) { 
+          lineWidth += ctx.measureText(content[i]).width; 
+          if (lineWidth > canvasWidth){  
+            ctx.fillText(content.substring(lastSubStrIndex, i), initWidth, initHeight);//绘制截取部分
+            initHeight += 30; //20为字体的高度
+            lineWidth = 0;
+            lastSubStrIndex = i;
+          } 
+          if (i == content.length - 1){//绘制剩余部分
+            ctx.fillText(content.substring(lastSubStrIndex, i + 1), initWidth, initHeight);
+          }
+        }
+        const remark = this.textRemark;
+        const remarkWidth = ctx.measureText(remark).width;
+        ctx.font = 'normal 300 14px "pingfang HK",sans-serif';
+        ctx.fillText(remark, styleWidth - padding - remarkWidth, 200);
+        const footerImgUrl = 'https://gh.rrdnyyy.com/books/book-cover-1532077675919.jpg';
+        const footerImg = await downloadFile(footerImgUrl);
+        ctx.drawImage(footerImg, 0, 260, styleWidth, footerImgHeight);
+        ctx.draw();
+        const self = this;
+        setTimeout(() => {
+          canvasToTempFilePath('textCanvas').then(path => {
+            self.imgSrc = path;
+            self.sharePic = path;
+            self.$apply();
+            wx.hideLoading();
+          });
+        }, 500);
+      } catch (e) {
+        wx.hideLoading();
+      }
+    }
+    async _imgCanvasInit() {
+      wx.showLoading({
+        title: '载入中...',
+      })
+      try {
+        const styleWidth = this.textCanvasWidth;
+        const footerImgHeight = 0.294 * styleWidth;
+        const url = this.shareImg;
+        const res = await getImageInfo(url);
+        
+        const styleHeight = styleWidth * res.height / res.width;
+        this.textCanvasHeight = footerImgHeight + styleHeight;
+        
+        this.$apply();
+        const ctx = wx.createCanvasContext('imgCanvas');
+        // 画图片
+        ctx.drawImage(res.path, 0, 0, styleWidth, styleHeight);
+        // 画底图
+        const footerImgUrl = 'https://gh.rrdnyyy.com/books/book-cover-1532077675919.jpg';
+        const footerImg = await downloadFile(footerImgUrl);
+        ctx.drawImage(footerImg, 0, styleHeight, styleWidth, footerImgHeight);
+
+        ctx.draw();
+        const self = this;
+        setTimeout(() => {
+          canvasToTempFilePath('imgCanvas').then(path => {
+            self.imgSrc = path;
+            self.sharePic = path;
+            self.$apply();
+            wx.hideLoading();
+          });
+        }, 500);
+      } catch (e) {
+        wx.hideLoading();
+      }
+    }
+    _saveImg(url) {
+      wx.showLoading({
+        title: '存储中...',
+      })
+      const self = this;
+      wx.downloadFile({
+        url,
+        success: function(res) {
+          let path = res.tempFilePath;
+          wx.saveImageToPhotosAlbum({
+            filePath: path,
+            success(res) {
+              wx.hideLoading();
+              wx.showToast({
+                title: '保存成功',
+                duration: 2000
+              })
+            },
+            fail(res) {
+              wx.hideLoading();
+            },
+          })
+        },
+        fail: function(res){
+          wx.hideLoading();
+        },
+      })
+    };
+    _saveCanvas(canvasId) {
+      wx.showLoading({
+        title: '存储中...',
+      })
+      const self = this;
+      wx.canvasToTempFilePath({
+        canvasId,
+        success: function(res) {
+          let path = res.tempFilePath;
+          wx.saveImageToPhotosAlbum({
+            filePath: path,
+            success(res) {
+              wx.hideLoading();
+              wx.showToast({
+                title: '保存成功',
+                duration: 2000
+              })
+            },
+            fail(res) {
+              wx.hideLoading();
+            },
+          })
+        },
+        fail: function(res){
+          wx.hideLoading();
+        },
+      })
+    };
+
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .share-container {
+    width: 750rpx;
+    height: 100vh;
+    background: rgba(0, 0, 0, .6);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    overflow: hidden;
+    .share-pic {
+      width: 100%;
+      height: 80vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      .share-pic-item {
+        width: 750rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        .share-pic-img {
+          width: 70%;
+        }
+        .myCanvas {
+          // position: absolute;
+          // z-index: -1;
+          // top: 0;
+          // left: 800rpx;
+        }
+      }
+      .share-canvas-item {
+        width: 750rpx;
+        position: absolute;
+        z-index: -1;
+        top: 0;
+        left: 800rpx;
+      }
+    }
+    .share-info {
+      width: 100%;
+      height: 20vh;
+      background: white;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      animation: card 0.3s ease-in-out;
+      .share-text {
+        font-size: 22rpx;
+        color: black;
+      }
+      .share-text-top {
+        height: 6vh;
+        line-height: 6vh;
+      }
+      .share-icon-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .share-icon-item {
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: center;
+          align-items: center;
+          width: 375rpx;
+          height: 14vh;
+          position: relative;
+          .share-btn {
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 300;
+          }
+          .share-pic-item {
+            width: 43rpx;
+            margin-bottom: 14rpx;
+          }
+        }
+      }
+    }
+  }
+  @keyframes card {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+</style>

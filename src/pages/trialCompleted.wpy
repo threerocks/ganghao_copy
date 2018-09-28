@@ -1,0 +1,311 @@
+<template>
+  <view class="trial-wrapper">
+    <share :userInfo.sync="userInfo"
+          :type.sync="type"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="shareImg"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :subText="subText"
+          wx:if="{{showShare}}"
+    ></share>
+    <view class="header">
+      <image mode="widthFix" class="success-icon" src="../common/images/success.svg" />
+      <text class="success-text">领取成功</text>
+      <text class="success-sub-text">领取时间：{{trialInfo.createdAt}}</text>
+    </view>
+    <view class="content">
+      <text class="content-text">剩余时长：{{trialInfo.surplus}}</text>
+      <text class="content-text">到期时间：{{trialInfo.deadline}}</text>
+      <text class="content-text">特权范围：全平台</text>
+      <text class="content-text">自动续期：否</text>
+    </view>
+    <view class="footer">
+      <view class="footer-btn-wrapper">
+        <view class="footer-btn" @tap.stop="clickEntry">确认</view>
+        <view class="footer-btn" @tap.stop="share">分享</view>
+      </view>
+      <view class="footer-text">分享给好友可升级<text class="mark-text">7天</text>会员为<text class="mark-text">10天</text>会员！！</view>
+    </view>
+    <view class="cover" hidden="{{hiddenCover}}" @tap.stop="clickCover" style="border-width: {{borderTop}}px 100rpx {{borderBottom}}px 425rpx;">
+      <view class="share-cover">
+        <text class="share-text">仅此一次<text class="share-mark-text">免费</text>升级机会哦，别错过咯。</text>
+        <image mode="widthFix" class="share-arrow" src="../common/images/share_arrow.png" />
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Share from '@/components/share';
+  import api from '@/common/js/api';
+  import moment from 'moment';
+
+  export default class Index extends wepy.page {
+    data = {
+      id: 1,
+      days: 3,
+      borderTop: 100,
+      borderBottom: 100,
+      hiddenCover: true,
+      firstClickEntry: true,
+      subText: '邀请你免费开通',
+      showShare: false,
+      shareTitle: '刚好读书会会员 - 双语阅读俱乐部·Read the world',
+      shareImg: 'https://gh.rrdnyyy.com/books/book-cover-1523867294876.png',
+      sharePath: 'pages/ganghao',
+      articleType: -1,
+      userInfo: {},
+      trialInfo: {},
+      type: -1,
+      extended: false,
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        const target = res.target;
+        if (target.dataset) {
+          const data = target.dataset;
+          return {
+            title: data.title,
+            path: data.path,
+            imageUrl: data.img,
+          }
+        }
+      }
+      return {
+        title: this.shareTitle,
+        path: `/page/ganghao`,
+        imageUrl: this.shareImg
+      }
+    };
+    onLoad(option) {
+      if (option.id) {
+        this.id = +option.id;
+      }
+      if (option.days) {
+        this.days = +option.days;
+      }
+      this.initSize();
+      this._getUserInfo();
+      this._getTrialInfo(this.id);
+    }
+    components = {
+      share: Share,
+    }
+    methods = {
+      clickCover() {
+        this.hiddenCover = true;
+      },
+      clickEntry() {
+        if (this.firstClickEntry) {
+          this.hiddenCover = false;
+          this.firstClickEntry = false;
+        } else {
+          wx.navigateTo({
+            url: `index`,
+          });
+        }
+      },
+      share() {
+        if (!this.userInfo) this._getUserInfo();
+        this.showShare = true;
+        this.type = 1;
+        this.firstClickEntry = false;
+        this._updateTrialInfo(this.id, this.days);
+      }
+    }
+    initSize() {
+      const clientHeight = wx.getSystemInfoSync().windowHeight;
+      const radio = 750 / wx.getSystemInfoSync().windowWidth;
+      const space = (clientHeight - 1015 / radio) / 2;
+      this.borderBottom =  70 / radio + space;
+      this.borderTop = space + 900 / radio
+    }
+    _formatInfo(info) {
+      if (info.deadline) {
+        const a = moment();
+        const b = moment(info.deadline);
+        let str = a.from(b);
+        str = str.replace(/(years|year)/, '年');
+        str = str.replace(/(months|month)/, '个月');
+        str = str.replace(/(days|day)/, '天');
+        str = str.replace(/(hours|hour)/, '小时');
+        str = str.replace(/(minutes|minute)/, '分钟');
+        str = str.replace(/(seconds|second)/, '秒');
+        str = str.replace(/(in|ago)/, '');
+        str = str.replace(/(an|a)/, '1');
+        str = str.replace(/\s+/, '');
+        info.surplus = str;
+      }
+      if (info.createdAt) {
+        info.createdAt = moment(info.createdAt).format('YYYY-MM-DD HH:mm:ss');
+      }
+
+      return info;
+    }
+    async _getUserInfo() {
+      this.userInfo = await api.getUserInfo();
+      this.$apply();
+    };
+    async _updateTrialInfo(id, days) {
+      if (!this.extended) {
+        await api.updateTrial(id, days);
+        this.extended = true;
+        this._getTrialInfo(id);
+        this.$apply();
+      }
+    };
+    async _getTrialInfo(id) {
+      const res = await api.getTrialInfo(id);
+      if (res.statusCode === 200) {
+        this.trialInfo = this._formatInfo(res.data);
+      }
+      this.$apply();
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .trial-wrapper {
+    width: 750rpx;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    .share-cover {
+      position: fixed;
+      bottom: 35%;
+      left: 50%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .share-text {
+        color: white;
+        font-size: 30rpx;
+        font-weight: 500;
+        margin-bottom: 10rpx;
+        .share-mark-text {
+          font-size: 50rpx;
+          font-weight: 500;
+          margin: 0 10rpx;
+        }
+      }
+      .share-arrow {
+        width: 200rpx;
+      }
+    }
+    .cover {
+      width: 225rpx;
+      height: 150rpx;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      border-style: solid;
+      border-color: rgba(0, 0, 0, .65);
+      overflow: hidden;
+      &::before {
+        content: '';
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 400px solid rgba(0, 0, 0, .65);
+        position: absolute;
+        left: -400px;
+        top: -400px;
+        box-shadow: inset 0 0 5px 2px rgba(0,0,0,.85);
+      }
+    }
+    .header {
+      width: 100%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .success-icon {
+        width: 30%;
+        margin: 80rpx 0;
+        animation: rotate 1s ease-out;
+      }
+      .success-text {
+        font-size: 40rpx;
+        font-weight: 500;
+        margin-bottom: 40rpx;
+      }
+      .success-sub-text {
+        color: #9b9b9b;
+        font-size: 30rpx;
+        font-weight: 400;
+      }
+    }
+    .content {
+      margin: 30rpx 0;
+      width: 100%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: flex-start;
+      .content-text {
+        font-size: 30rpx;
+        font-weight: 400;
+        padding-left: (750rpx - 750rpx * 0.3 * 2 - 100rpx) / 2;
+        margin: 8rpx;
+      }
+    }
+    .footer {
+      width: 100%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      min-height: 200rpx;
+      .footer-btn-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        .footer-btn {
+          width: 30%;
+          background: #7bce8b;
+          color: white;
+          font-size: 30rpx;
+          font-weight: 400;
+          text-align: center;
+          height: 75rpx;
+          line-height: 75rpx;
+          border-radius: 10rpx;
+          &:first-child {
+            margin-right: 100rpx;
+          }
+        }
+      }
+      .footer-text {
+        width: 100%;
+        color: #9b9b9b;
+        text-align: center;
+        font-size: 30rpx;
+        font-weight: 400;
+        margin-top: 20rpx;
+        .mark-text {
+          color: #ff7373;
+          font-size: 40rpx;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+  @keyframes rotate {
+    0% {
+      transform: rotate(0);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>

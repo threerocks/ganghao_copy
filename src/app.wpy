@@ -1,0 +1,102 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+view {
+  font-family: "PingFang HK", "PingFang SC", "Helvetica Neue",Helvetica,"Hiragino Sans GB","Microsoft YaHei","微软雅黑",Arial,sans-serif;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+import Promise from 'promise-polyfill'; 
+import api from '@/common/js/api'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/index',
+      'pages/trialCompleted',
+      'pages/couponCatch',
+      'pages/today',
+      'pages/articlePreview',
+      'pages/article',
+      'pages/bookmark',
+      'pages/wolf',
+      'pages/bought',
+      'pages/course',
+      'pages/special',
+      'pages/ganghao',
+      'pages/coupon',
+      'pages/lessons',
+      'pages/join',
+      'pages/card',
+      'pages/cardEntry',
+    ],
+    requiredBackgroundModes: ["audio"],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#3b3a40',
+      navigationBarTextStyle: 'white',
+      enablePullDownRefresh: true,
+    },
+    plugins: {
+
+    },
+  };
+
+  globalData = {
+    courseList: [],
+    playlist: [],
+    currentIndex: -1,
+    player: {},
+  };
+
+  data = {
+    userInfo: {},
+  };
+
+  constructor () {
+    super()
+    this.use('requestfix');
+    this.use('promisify');
+  };
+
+  onLaunch() {
+    let key = "currentSongIndex";
+    wx.setStorage({key, data: -1});
+    key = "songList";
+    wx.setStorage({key, data: []});
+
+    if (wx.getUpdateManager) {
+      const updateManager = wx.getUpdateManager()
+      updateManager.onCheckForUpdate(function (res) {
+        // 请求完新版本信息的回调
+      })
+      updateManager.onUpdateReady(function () {
+        wx.showModal({
+          title: '有新版本啦!',
+          showCancel: false,
+          content: '优化了一波体验：\r\n1、你可以更快速的获取信息\r\n2、你能够获得更流畅的操作',
+          success: function (res) {
+            if (res.confirm) {
+              // 新的版本已经下载好，调用 applyUpdate 应用新版本并重启
+              //wx.clearStorage();
+              updateManager.applyUpdate();
+            }
+          }
+        })
+      })
+      updateManager.onUpdateFailed(function () {
+        // 新的版本下载失败
+      })
+    }
+  };
+}
+</script>

@@ -1,0 +1,197 @@
+<template>
+  <view>
+    <lessonCommon :optionKey.sync="optionKey" :starCount.sync="starCount" :currentIndex.sync="currentIndex" :playList.sync="playList" :id.sync="id" :bookId.sync="bookId" :userInfo.sync="userInfo"></lessonCommon>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import LessonCommon from '@/components/lesson_common';
+  import api from '@/common/js/api';
+  import {urlParse} from '@/common/js/func';
+
+  export default class Lessons extends wepy.page {
+    config = {
+      disableScroll: true,
+    };
+    data = {
+      id: -1,
+      bookId: -1,
+      access: false,
+      lesson: {},
+      playList: [],
+      currentIndex: -1,
+      optionKey: '',
+      starCount: 0,
+      userInfo: {},
+    };
+
+    components = {
+      lessonCommon: LessonCommon,
+    };
+    onLoad(option) {
+      if(option.q){ 
+        const link = decodeURIComponent(option.q);
+        const param = urlParse(link);
+        this.id = param.id;
+        this.bookId = param.bookId;
+      } else {
+        this.id = option.id;
+        this.bookId = option.bookId;
+      }
+      this.currentIndex = +option.index;
+      this.optionKey = JSON.stringify(option);
+      if (!this.$parent.globalData.playList) {
+        const key = 'playerInfo';
+        const playerInfo = wx.getStorageSync(key);
+        if (playerInfo) {
+          this.playList = playerInfo.songList;
+        } else {
+          this.playList = [];
+        }
+      } else {
+        this.playList = this.$parent.globalData.playList;
+      }
+      this._getLessonInfo();
+      this._getUserAccess();
+      this._getStarCount(this.id);
+    };
+    onShow() {
+    };
+    onPullDownRefresh() {
+
+    };
+    onPageScroll(e) {
+
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        const target = res.target;
+        if (target.dataset) {
+          const data = target.dataset;
+          return {
+            title: data.title,
+            path: data.path,
+            imageUrl: data.img,
+          }
+        }
+      }
+      const imageUrl = +this.bookId === 21 ? 'https://gh.rrdnyyy.com/books/book-cover-1528182432068.jpg' : 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg';
+      return {
+        title: `刚好读书会-${this.lesson && this.lesson.title ? this.lesson.title : ''}`,
+        path: `/pages/lessons?id=${this.id}&bookId=${this.bookId}`,
+        imageUrl,
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    methods = {
+      touchmove() {
+        return;
+      }
+    };
+    watch = {
+      access(newValue) {
+        if (newValue) {
+          return;
+        }
+      }
+    };
+    events = {
+      numberChange(number, $event) {
+        this.starCount = this.starCount + number;
+      },
+      debounceChange(count, $event) {
+        this._updateStar(this.id, count);
+      }
+    };
+    setGlobalIndex(index) {
+      this.$parent.globalData.currentIndex = +index;
+    };
+    setGlobalList(list) {
+      this.$parent.globalData.playlist = list;
+    };
+    async _updateStar(id, count) {
+      const type = 0;
+      const data = await api.updateStar(type, id, count);
+      // if (data.statusCode === 200) {
+      //   this.starCount = data.data.count;
+      //   console.log(this.starCount)
+      //   this.$apply();        
+      // }
+    };
+    async _getStarCount(id) {
+      const type = 0;
+      const data = await api.getStarCount(type, id);
+      if (data.statusCode === 200) {
+        this.starCount = data.data && data.data.count ? data.data.count : 0;
+        this.$apply();        
+      }
+    };
+    async _getLessonInfo() {
+      const id = this.id;
+      if (id === -1) return;
+      const data = await api.getLesson(id, true);
+      if (data.statusCode === 200) {
+        console.log(data)
+        this.lesson = data.data;
+        this.$apply();        
+      }
+    }
+
+    async _getUserAccess() {
+      const userInfo = await api.getUserInfo();
+      this.userInfo = userInfo;
+      const bookId = this.bookId;
+      const list = await api.getCourseInfo(bookId);
+      if (list.statusCode === 200) {
+        if (list.data.length <= 0) return;
+        const bookInfo = list.data[0];
+        const type = bookInfo.purchase_type;
+        switch (type) {
+          case 0: {
+            const info = await api.getPurchaseRecordInfo(bookId, userInfo.id);
+            if (!info.data) {
+              wx.navigateTo({
+                url: `course?id=${bookId}`
+              });
+            }
+            break;
+          }
+          case 1: {
+            const info = await api.getVipInfo(userInfo.id, 1);
+            if (!info.data) {
+              wx.navigateTo({
+                url: `course?id=${bookId}`
+              });
+            }
+            break;
+          }
+          case 2: {
+            const purchaseRecordInfo = await api.getPurchaseRecordInfo(bookId, userInfo.id);
+            const vipInfo = await api.getVipInfo(userInfo.id, 1);
+            if (!purchaseRecordInfo.data && !vipInfo.data) {
+              wx.navigateTo({
+                url: `course?id=${bookId}`
+              });
+            }
+            break;
+          }
+          default:
+            break;
+        }
+        this.$apply();
+      }
+    }
+
+  }
+</script>
+
+<style type="scss">
+
+</style>

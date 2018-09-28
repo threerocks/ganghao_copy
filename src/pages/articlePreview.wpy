@@ -1,0 +1,53 @@
+<template>
+  <view class="preview-section">
+    <input class="preview-input" placeholder="请输入文章ID，进行预览" type="number" @input="bindKeyInput" auto-focus/>
+    <button type="preview-button" @tap="preview" class="preview-button">预览</button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class ArticlePreview extends wepy.page {
+    config = {
+    };
+    data = {
+      inputValue: '',
+    }
+    methods = {
+      bindKeyInput(e) {
+        const value = e.detail.value;
+        this.inputValue = value;
+      },
+      preview() {
+        const id = this.inputValue;
+        wx.navigateTo({
+          url: `article?id=${id}`,
+        })
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .preview-section {
+    width: 750rpx;
+    height: 100vh;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .preview-input {
+      width: 90%;
+      border: 1px solid #979797;
+      background: white;
+      height: 90rpx;
+    }
+    .preview-button {
+      width: 700rpx;
+      margin: 25rpx 0 12.5rpx 0;
+      background-color: #d19e69;
+      color: white;
+    }
+  }
+</style>

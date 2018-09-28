@@ -1,0 +1,296 @@
+<template>
+  <view class="star-container">
+    <view class="star-content" hidden="{{!checked}}">
+      +{{count}}
+      <view class="s1" hidden="{{!checked}}"></view>
+      <view class="s2" hidden="{{!checked}}"></view>
+      <view class="s3" hidden="{{!checked}}"></view>
+      <view class="s4" hidden="{{!checked}}"></view>
+      <view class="s5" hidden="{{!checked}}"></view>
+      <view class="s6" hidden="{{!checked}}"></view>
+      <view class="s7" hidden="{{!checked}}"></view>
+      <view class="s8" hidden="{{!checked}}"></view>
+    </view>
+    <view class="star-btn" @tap.stop="clickStar" @longpress.stop="longpressStar" @touchend.stop="touchend" @touchcancel.stop="touchend"></view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import {debounce} from '@/common/js/func';
+
+  export default class Index extends wepy.component {
+    data = {
+      checked: false,
+      number: 0,
+      count: 0,
+    };
+    methods = {
+      clickStar() {
+        this.number = this.number + 1;
+      },
+      longpressStar() {
+        const self = this;
+        this.intervalTimer = setInterval(() => {
+          self.number = self.number + 1;
+          this.$apply();
+        }, 320)
+      },
+      touchend() {
+        clearInterval(this.intervalTimer);
+      }
+    };
+    watch = {
+      number(newNumber) {
+        if (newNumber === 0) return;
+        this.checked = true;
+        const self = this;
+        self.count = self.count + newNumber;
+        setTimeout(() => {
+          self.checked = false;
+          self.$emit('numberChange', newNumber);
+          self.number = 0;
+          self.$apply();
+        }, 300);
+        debounce(() => {
+          self.$emit('debounceChange', self.count);
+          self.count = 0;
+          self.$apply();
+        }, 2000)();
+        this.$apply();
+      },
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $w: 100rpx;
+  $s: 15rpx;
+  $h: 0.207 * $w;
+  $H: 0.707 * $w;
+  $time: 0.35s;
+  $scaleBig: 2;
+  $scaleSmall: 0.5;
+  .star-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .star-btn {
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: 50%;
+      box-shadow:0px 0px 8px #5D9FEC;
+      // border: 1px #5D9FEC solid;
+      background-repeat: no-repeat;
+      background-size: 60% 60%;
+      background-position: center center;
+      background-color: white;
+      background-image: url("data:image/png;base64,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");
+      &:active{
+        background-image: url("data:image/png;base64,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");
+      }
+    }
+    .star-content {
+      width: $w;
+      height: $w;
+      border-radius: 50%;
+      line-height: $w;
+      text-align: center;
+      position: absolute;
+      z-index: 9999;
+      top: -200rpx;
+      right: 20rpx;
+      font-family: 'Avenir Next', Avenir, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: $w / 2;
+      font-weight: 500;
+      color: rgb(243, 81, 134);
+      overflow: visible;
+      .s1 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #988ADE;
+        left: $w / 2 - $s / 2;
+        top: - $s / 2;
+        transform-origin: center;
+        animation: s1 $time linear;
+        overflow: visible;
+      }
+      .s2 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #DE8AA0;
+        left: $w - $h / 1.414 - $s / 2;
+        top: $h / 1.414 - $s / 2;
+        transform-origin: center;
+        animation: s2 $time linear;
+        overflow: visible;
+      }
+      .s3 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #8AAEDE;
+        left: $w - $s / 2;
+        top: $w / 2 - $s / 2;
+        transform-origin: center;
+        animation: s3 $time linear;
+        overflow: visible;
+      }
+      .s4 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #8ADEAD;
+        left: $w - $h / 1.414 - $s / 2;
+        top:  $w - $h / 1.414 - $s / 2;
+        transform-origin: center;
+        animation: s4 $time linear;
+        overflow: visible;
+      }
+      .s5 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #DEC58A;
+        left: $w / 2 - $s / 2;
+        top:  $w  - $s / 2;
+        transform-origin: center;
+        animation: s5 $time linear;
+        overflow: visible;
+      }
+      .s6 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #8AD1DE;
+        left: $h / 1.414 - $s / 2;
+        top:  $w - $h / 1.414 - $s / 2;
+        transform-origin: center;
+        animation: s6 $time linear;
+        overflow: visible;
+      }
+      .s7 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #6F97F7;
+        left: - $s / 2;
+        top:  $w / 2 - $s / 2;
+        transform-origin: center;
+        animation: s7 $time linear;
+        overflow: visible;
+      }
+      .s8 {
+        position: absolute;
+        width: $s;
+        height: $s;
+        border-radius: 50%;
+        background: #ef3f52;
+        left: $h / 1.414 - $s / 2;
+        top:  $h / 1.414 - $s / 2;
+        transform-origin: center;
+        animation: s8 $time linear;
+        overflow: visible;
+      }
+
+    }
+  }
+  @keyframes s1 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate(0, - $h);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(0, - $h - $H);
+    }
+  }
+  @keyframes s2 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate($h / 1.414, - $h / 1.414);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(($H + $h) / 1.414, - ($H + $h) / 1.414);
+    }
+  }
+  @keyframes s3 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate($h, 0);
+    }
+    100% {
+      transform: scale($scaleSmall) translate($h + $H, 0);
+    }
+  }
+  @keyframes s4 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate($h / 1.414, $h / 1.414);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(($h + $H) / 2, ($h + $H) / 2);
+    }
+  }
+  @keyframes s5 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate(0, $h);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(0, $h + $H);
+    }
+  }
+  @keyframes s6 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate(- $h / 1.414, $h / 1.414);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(- ($h + $H) / 1.414, ($h + $H) / 1.414);
+    }
+  }
+  @keyframes s7 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate(- $h, 0);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(- $h - $H, 0);
+    }
+  }
+  @keyframes s8 {
+    0% {
+      transform: scale($scaleSmall);
+    }
+    20% {
+      transform: scale($scaleBig) translate(- $h / 1.414, - $h / 1.414);
+    }
+    100% {
+      transform: scale($scaleSmall) translate(- ($h + $H) / 2, - ($h + $H) / 2);
+    }
+  }
+</style>

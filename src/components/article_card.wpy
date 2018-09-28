@@ -1,0 +1,245 @@
+<template>
+  <view class="banner-card">
+    <view class="v1 vv" wx:if="{{showIndex === 1}}">
+      <view class="v1-item item"><image src="{{urls[0]}}" class="image-icon" mode="aspectFill" /></view>  
+    </view>
+    <view class="v2 vv" wx:if="{{showIndex === 2}}">
+      <view class="v2-item item"><image src="{{urls[0]}}" class="image-icon" @tap.stop="previewImage({{urls[0]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v2-item item"><image src="{{urls[1]}}" class="image-icon" @tap.stop="previewImage({{urls[1]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v2-item item"><image src="{{urls[2]}}" class="image-icon" @tap.stop="previewImage({{urls[2]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v2-item item"><image src="{{urls[3]}}" class="image-icon" @tap.stop="previewImage({{urls[3]}}, {{urls}})" mode="aspectFill" /></view>
+    </view>
+    <view class="v3 vv" wx:if="{{showIndex === 3}}">
+      <view class="v3-item-l item"><image src="{{urls[0]}}" class="image-icon" @tap.stop="previewImage({{urls[0]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item item"><image src="{{urls[1]}}" class="image-icon" @tap.stop="previewImage({{urls[1]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item item"><image src="{{urls[2]}}" class="image-icon" @tap.stop="previewImage({{urls[2]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item-l item"><image src="{{urls[3]}}" class="image-icon" @tap.stop="previewImage({{urls[3]}}, {{urls}})" mode="aspectFill" /></view>
+    </view>
+    <view class="v4 vv" wx:if="{{showIndex === 4}}">
+      <view class="v3-item item"><image src="{{urls[0]}}" class="image-icon" @tap.stop="previewImage({{urls[0]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item-l item"><image src="{{urls[1]}}" class="image-icon" @tap.stop="previewImage({{urls[1]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item-l item"><image src="{{urls[2]}}" class="image-icon" @tap.stop="previewImage({{urls[2]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v3-item item"><image src="{{urls[3]}}" class="image-icon" @tap.stop="previewImage({{urls[3]}}, {{urls}})" mode="aspectFill" /></view>
+    </view>
+    <view class="v5 vv" wx:if="{{showIndex === 5}}">
+      <view class="v5-item item"><image src="{{urls[0]}}" class="image-icon" @tap.stop="previewImage({{urls[0]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[1]}}" class="image-icon" @tap.stop="previewImage({{urls[1]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[2]}}" class="image-icon" @tap.stop="previewImage({{urls[2]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[3]}}" class="image-icon" @tap.stop="previewImage({{urls[3]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[4]}}" class="image-icon" @tap.stop="previewImage({{urls[4]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[5]}}" class="image-icon" @tap.stop="previewImage({{urls[5]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[6]}}" class="image-icon" @tap.stop="previewImage({{urls[6]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[7]}}" class="image-icon" @tap.stop="previewImage({{urls[7]}}, {{urls}})" mode="aspectFill" /></view>
+      <view class="v5-item item"><image src="{{urls[8]}}" class="image-icon" @tap.stop="previewImage({{urls[8]}}, {{urls}})" mode="aspectFill" /></view>
+    </view>
+    <view class="banner-card-title">{{title}}</view>
+    <view class="banner-card-icon">
+      <view class="icon-left">
+        <image class="claps-icon" src="../common/images/clap.png" />
+        <text space="nbsp">{{starCount}}  claps</text>
+      </view>
+      <view class="share-icon-wrapper" @tap.stop="clickShare({{articleId}}, {{title}}, {{urls[0]}})"><image class="share-icon" src="../common/images/share.png" /></view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class ArticleCard extends wepy.component {
+    props = {
+      showIndex: {
+        type: Number,
+        default: 0,
+      },
+      articleId: {
+        type: Number,
+        default: -1,
+      },
+      starCount: {
+        type: Number,
+        default: 0,
+      },
+      title: {
+        type: String,
+        default: '',
+      },
+      urls: {
+        type: Array,
+        default: function () {
+          return []
+        },
+      },
+    };
+    data = {
+
+    }
+    methods = {
+      previewImage(url, urls) {
+        wx.previewImage({
+          current: url, // 当前显示图片的http链接
+          urls: urls, // 需要预览的图片http链接列表
+        })
+      },
+      clickShare(id, title, img) {
+        this.$emit('clickArticle', id, title, img)
+      }
+    };
+    watch = {
+      urls(list) {
+        
+      },
+      articleId(id) {
+
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $indent: 40rpx;
+  $boxShadow: 0 1px 3px #979797;
+  $v3-height: 2 / 3 * (750rpx - 2 * $indent) * 0.98 + (750rpx - 2 * $indent) * 0.02;
+  .banner-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: $boxShadow;
+    background: white;
+    width: 750rpx - 2 * $indent;
+    font-family: 'PingFang HK';
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+  }
+  .banner-card-title {
+    width: 750rpx - 4 * $indent;
+    line-height: 1.7;
+    font-size: 38rpx;
+    margin-top: 20rpx;
+  }
+  .banner-card-icon {
+    width: 750rpx - 2 * $indent;
+    height: 100rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .share-icon-wrapper {
+      width: 100rpx;
+      height: 100rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+  .image-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .icon-left {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #9B9B9B;
+    font-size: 27rpx;
+    font-weight: 300;
+    margin-left: $indent;
+  }
+  .claps-icon, .share-icon {
+    width: 31rpx;
+    height: 31rpx;
+  }
+  .claps-icon {
+    margin-right: 20rpx;
+  }
+
+  .vv {
+    width: 750rpx - 2 * $indent;
+    height: 750rpx - 2 * $indent;
+  }
+  .item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3vh;
+    color: #303133;
+  }
+  .item:nth-child(1) {
+    background-color: #FF9F1C;
+  }
+  .item:nth-child(2) {
+    background-color: #FFBF69;
+  }
+  .item:nth-child(3) {
+    background-color: #ABE188;
+  }
+  .item:nth-child(4) {
+    background-color: #EAA990;
+  }
+  .item:nth-child(5) {
+    background-color: #E67E87;
+  }
+  .item:nth-child(6) {
+    background-color: #46B1C9;
+  }
+  .item:nth-child(7) {
+    background-color: #A3EFF0
+  }
+  .item:nth-child(8) {
+    background-color: #F7D4A6;
+  }
+  .item:nth-child(9) {
+    background-color: #E68E85
+  }
+  .v1 {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    align-items: center;
+  }
+  .v1-item {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+  .v2 {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items: center;
+    align-content: space-between;
+  }
+  .v2-item { 
+    width: 49%;
+    height: 49%;
+  }
+  .v3, .v4 {
+    width: 100%;
+    height: $v3-height;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items: center;
+    align-content: space-between;
+  }
+  .v3-item {
+    height: 1 / 3 * (750rpx - 2 * $indent) * 0.98;
+    width: 1 / 3 * (750rpx - 2 * $indent) * 0.98;
+  }
+  .v3-item-l {
+    width: 2 / 3 * (750rpx - 2 * $indent) * 0.98;
+    height: 1 / 3 * (750rpx - 2 * $indent) * 0.98;
+  }
+  .v5 {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items: center;
+    align-content: space-between;
+  }
+  .v5-item {
+    height: (750rpx - 2 * $indent - (750rpx - 2 * $indent) * 0.04) / 3;
+    width: (750rpx - 2 * $indent - (750rpx - 2 * $indent) * 0.04) / 3;
+  }
+</style>

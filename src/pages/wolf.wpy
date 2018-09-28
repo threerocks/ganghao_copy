@@ -1,0 +1,353 @@
+<template>
+  <view class="wolf-container" style="font-size: {{currentFontSize}}rpx">
+    <text class="title">刚好有礼 | 双语有声书Big Wolf & Little Wolf</text>
+    <text class="time">2018-02-06</text>
+    <text class="text">Big Wolf and Little Wolf，</text>
+    <text class="text">一个很甜的小故事。 </text>
+    <image src="{{imgList[0]}}" mode="widthFix" class="image" />
+    <text class="text">During one of Big Wolf’s customary afternoon, he stretches under a tree he has long considered his own, atop a hill he has claimed for himself.</text>
+    <text class="text">But this is no ordinary day — Big Wolf spots a new presence perched on the horizon, a tiny blue figure.</text>
+    <text class="text">As the newcomer approaches, he turns out to be Little Wolf. </text>
+    <text class="text">大狼像往常的每一个下午一样，他在一棵早已宣称了主权的树下做伸展运动，如同这棵树，大狼认为这座山也是属于他的。</text>
+    <text class="text">但这并不是普通的一天，大狼看到，在地平线上出现了一个新的身影，一个很小的蓝色的身影。</text>
+    <text class="text">随着到来者不断接近，身影不断清晰，小狼出现了。 </text>
+    <image src="{{imgList[1]}}" mode="widthFix" class="image" />
+    <text class="text">At first, the two wolves observe one another silently out of the corner of their eyes.</text>
+    <text class="text">起初的时候，大狼和小狼都用彼此的余光，偷偷的安静的观察着对方。 </text>
+    <image src="{{imgList[2]}}" mode="widthFix" class="image" />
+    <text class="text">Night came.</text>
+    <text class="text">Little Wolf stayed.</text>
+    <text class="text">Big Wolf thought that Little Wolf went a bit too far.</text>
+    <text class="text">After all, it had always been his tree.</text>
+    <text class="text">When Big Wolf went to bed, Little Wolf went to bed.</text>
+    <text class="text">夜幕降临。</text>
+    <text class="text">小狼没有离开，留了下来。</text>
+    <text class="text">大狼觉得，小狼这么做是有点过分了。</text>
+    <text class="text">毕竟，这棵树一直以来都是他的。</text>
+    <text class="text">当大狼去睡觉的时候，小狼也去睡觉了。 </text>
+    <image src="{{imgList[3]}}" mode="widthFix" class="image" />
+    <text class="text">When Big Wolf saw that Little Wolf was shivering at the tip of his nose, he pushed a teeny tiny corner of his leaf blanket closer to him.</text>
+    <text class="text">“That is certainly enough for such a little wolf,” he thought.</text>
+    <text class="text">当大狼看到，小狼冻的鼻尖发抖的时候，他把自己树叶毯子的很小很小的一角，盖在了小狼身上。</text>
+    <text class="text">大狼觉得，“对于这么小的狼来说，这些就足够了。” </text>
+    <text class="text">When morning breaks, Big Wolf goes about his daily routine and climbs up his tree to do his exercises, and Little Wolf follows him instead of leaving.</text>
+    <text class="text">等早晨到来的时候，大狼开始了他每天的固定晨练，他爬上树，开始运动。小狼呢，非但没有离开，而是随着大狼一起准备运动。 </text>
+    <image src="{{imgList[4]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf at first fears that Little Wolf might outclimb him. </text>
+    <text class="text">But the newcomer struggles, exhaling a tiny “Ouch” as he thuds to the ground on his first attempt before making it up the tree, </text>
+    <text class="text">leaving Big Wolf both unthreatened and impressed with the little one’s quiet courage.</text>
+    <text class="text">起初，大狼担心小狼会比他爬的更高。</text>
+    <text class="text">但在爬上树之前，小狼一直都在尝试，即使砰地一声摔在地上，他也只是发出了一声极小的“诶呀”，</text>
+    <text class="text">这画面不但打消了大狼的顾虑，也让他对小狼的勇气感到震撼。 </text>
+    <image src="{{imgList[5]}}" mode="widthFix" class="image" />
+    <text class="text">Silently, Little Wolf mirrors Big Wolf’s exercises.</text>
+    <text class="text">Silently, he follows him back down.</text>
+    <text class="text">一言不发，小狼照着大狼的动作晨练起来。</text>
+    <text class="text">同样是沉默着，小狼和大狼一起从树上下来。</text>
+    <image src="{{imgList[6]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf picks his usual fruit for breakfast, but, seeing as Little Wolf isn’t picking any, grabs a few more than usual.</text>
+    <text class="text">Silently, he pushes a modest plate to Little Wolf, who eats it just as silently.</text>
+    <text class="text">大狼拿了一些他常吃的水果作为早餐，但是，看到小狼什么也没有拿，大狼就比平时多拿了一些。</text>
+    <text class="text">默不作声，大狼把一个小盘子推给小狼，而小狼吃的时候也是安安静静地。 </text>
+    <image src="{{imgList[7]}}" mode="widthFix" class="image" />
+    <text class="text">When Big Wolf goes for his daily walk, he peers at his tree from the bottom of the hill and sees Little Wolf still stationed there, sitting quietly.</text>
+    <text class="text">当大狼开始他每天的散步时，他从山下凝视着他的树，他看到，小狼还在那里，安静的坐着。 </text>
+    <image src="{{imgList[8]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf smiled. Little Wolf was small.</text>
+    <text class="text">Big Wolf crossed the big field of wheat at the bottom of the hill.</text>
+    <text class="text">大狼的脸上露出微笑。小狼，好小啊。</text>
+    <text class="text">大狼穿过了山下的一片很大的小麦田地。</text>
+    <text class="text">Then he turned around again.</text>
+    <text class="text">Little Wolf was still there under the tree.</text>
+    <text class="text">Big Wolf smiled. Little Wolf looked even smaller.</text>
+    <text class="text">然后，他转过身来。</text>
+    <text class="text">小狼，还在树下。</text>
+    <text class="text">大狼微笑着，而小狼看起来似乎更小了。 </text>
+    <text class="text">He reached the edge of the forest and turned around one last time. </text>
+    <text class="text">Little Wolf was still there under the tree, but he was now so small that only a wolf as big as Big Wolf could possibly see that such a little wolf was there.</text>
+    <text class="text">大狼到达了森林的边缘，最后一次，他转过身。</text>
+    <text class="text">小狼还在树下，但是小狼真的太小了，小到只有像大狼这么大，才能够看到树下的小狼。 </text>
+    <image src="{{imgList[9]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf smiled one last time and entered the forest to continue his walk.   </text>
+    <text class="text">大狼脸上最后一次露出微笑，然后，他就走进森林里继续散步了。 </text>
+    <text class="text">But when he reemerges from the forest by evening, the tiny blue dot is gone from under the tree.</text>
+    <text class="text">晚上，当大狼从森林回来的时候，那个树下的蓝色小身影不见了。 </text>
+    <text class="text">At first, Big Wolf assures himself that he must be too far away to see Little Wolf. But as he crosses the wheat field, he still sees nothing.</text>
+    <text class="text">起初，大狼安慰自己，一定是因为自己离得太远了，所以看不到小狼。</text>
+    <text class="text">但是，当大狼穿过那一片小麦，他依然什么也没有看到。</text>
+
+    <image src="{{imgList[10]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf felt uneasy for the first time in his life.</text>
+    <text class="text">He climbed back up the hill much more quickly than on any other evenings.</text>
+    <text class="text">在他生命中，大狼第一次感到了不安。</text>
+    <text class="text">他匆忙的爬回山上，速度比以往任何的一个晚上都要快。</text>
+    <image src="{{imgList[11]}}" mode="widthFix" class="image" />
+    <text class="text">There was no one under his tree. No one big, no one little.</text>
+    <text class="text">It was like before.</text>
+    <text class="text">Except that now Big Wolf was sad.</text>
+    <text class="text">树下，什么也没有，大的小的都没有。</text>
+    <text class="text">一切又回到了从前。</text>
+    <text class="text">但现在的大狼，变得难过了起来。</text>
+    <text class="text">That evening for the first time Big Wolf didn’t eat.</text>
+    <text class="text">That night for the first time Big Wolf didn’t sleep.</text>
+    <text class="text">He waited.</text>
+    <text class="text">For the first time, he said to himself that a little one, indeed a very little one, had taken up space in his heart.</text>
+    <text class="text">No</text>
+    <text class="text">A lot of space.</text>
+    <text class="text">那一晚，第一次，大狼没有吃东西。</text>
+    <text class="text">同样是那一晚，第一次，大狼失眠了。</text>
+    <text class="text">他在等待着。</text>
+    <text class="text">也是第一次，他告诉自己，小狼，对，就是这只很小很小的狼，在他心里占据了一些空间。</text>
+    <text class="text">不</text>
+    <text class="text">是很大的空间。</text>
+    <image src="{{imgList[12]}}" mode="widthFix" class="image" />
+    <text class="text">By morning, Big Wolf climbs his tree but can’t bring himself to exercise — instead, he peers into the distance, his forlorn eyes wide with sorrow and longing.</text>
+    <text class="text">早晨的时候，大狼爬上树，但他没有一点心情去晨练，而是用他那充满了悲伤和期待的孤独眼神，望向远方。 </text>
+    <text class="text">He bargained the way the bereaved do — if Little Wolf returns, he vows,</text>
+    <text class="text">He would offer him “a large corner of his leaf blanket, even a much larger one”;</text>
+    <text class="text">He would give him all the fruit he wanted;</text>
+    <text class="text">He would let him climb higher and mirror all of his exercises, “even the special ones known only to him.”</text>
+    <text class="text">大狼像是失去了亲人一样和自己讨价还价——如果小狼回来，他发誓，</text>
+    <text class="text">他会给小狼一大角树叶毯子，是更大的一片。</text>
+    <text class="text">他会给小狼所有他想要的水果。</text>
+    <text class="text">他会让小狼比他爬的更高，并照着自己的动作去锻炼，甚至是那些只有他自己才会的动作。 </text>
+    <image src="{{imgList[13]}}" mode="widthFix" class="image" />
+    <text class="text">Big Wolf waits and waits and waits.</text>
+    <text class="text">大狼，等啊，等啊。</text>
+    <text class="text">And then, one day, a tiny blue dot appears on the horizon.</text>
+    <text class="text">然后，有一天，一个蓝色的小身影又出现在地平线上。 </text>
+    <image src="{{imgList[14]}}" mode="widthFix" class="image" />
+    <text class="text">For the first time in his life Big Wolf’s heart beat with joy.</text>
+    <text class="text">第一次，在大狼的生命中，他感受到了心跳的喜悦。</text>
+    <text class="text">Silently, Little Wolf climbs up the hill toward the tree.</text>
+    <text class="text">一言不发，小狼朝着树的方向，往山上爬。 </text>
+    <image src="{{imgList[15]}}" mode="widthFix" class="image" />
+    <text class="text">“Where were you?” asked Big Wolf.</text>
+    <text class="text">“Down here,” said Little Wolf without pointing.</text>
+    <text class="text">“Without you,” said Big Wolf in a very small voice, “I was lonely.”</text>
+    <text class="text">“你去哪儿了”大狼问道</text>
+    <text class="text">“就在下面”小狼说着，但并没有用手指过去。</text>
+    <text class="text">大狼用很小的声音说，“你不在身边，我觉得很孤单。” </text>
+    <image src="{{imgList[16]}}" mode="widthFix" class="image" />
+    <text class="text">Little Wolf took a step closer to Big Wolf.</text>
+    <text class="text">“Me too,” he said. “I was lonely too.”</text>
+    <text class="text">He rested his head gently on Big Wolf’s shoulder.</text>
+    <text class="text">Big Wolf felt good.</text>
+    <text class="text">小狼向大狼走近一步。</text>
+    <text class="text">他说，“我也是，我也感到很孤单。”</text>
+    <text class="text">小狼把头倚在大狼的肩上。</text>
+    <text class="text">大狼觉得很安心。 </text>
+    <image src="{{imgList[17]}}" mode="widthFix" class="image" />
+    <text class="text">And so it was decided that from then on Little Wolf would stay.</text>
+    <text class="text">就这样，小狼留了下来。</text>
+    <text class="text end">—— The End ——</text>
+    <text class="text">在城市里行走，像罩了一个隐形的泡泡，每天和三千个人擦肩，问好微笑，保持分寸。自己空间的边界像挂了告示，也在想是否某天，会有刚好的那个人，乘着祥云跳着舞的，走进来，也留下来，一起边走边甜。 </text>
+    <text class="text">Every once in a while, we encounter another creature who reminds us with the sweetness of persistent yet undemanding affection that we need not walk alone. We spend our lives trying to discern where we end and the rest of the world begins, and meditating the relationship between the ego and the capacity for love.</text>
+    <perch class="perch"></perch>
+    <player :src.sync="src"
+            :songList="songList"
+            :songIndex="songIndex"
+            :name.sync="songName"
+            :normal="getNormalConfig"
+            class="player"
+    ></player>
+    <bar class="bar" :mainPage.sync="mainPage" :share.sync="share" :font.sync="font" :star.sync="star" :starCount.sync="starCount"></bar>
+    <star class="star-container"></star>
+    <share :userInfo.sync="userInfo"
+          :type.sync="type"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="shareImg"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :articleId.sync="articleId"
+          :bookId.sync="shareBookId"
+          wx:if="{{showShare}}"
+    ></share>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import PlayerInner from '@/base/player-inner';
+  import Purchase from '@/base/purchase';
+  import Perch from '@/base/perch';
+  import Bar from '@/base/bar';
+  import Star from '@/base/star';
+  import Share from '@/components/share';
+  import {random_int} from '@/common/js/func'
+
+  export default class Wolf extends wepy.page {
+    data = {
+      imgList: [],
+      src: '',
+      songName: '大狼小狼',
+      currentFontSize: 30,
+      mainPage: true,
+      share: true,
+      star: true,
+      font: true,
+      starCount: 0,
+      id: 366, // 大狼小狼固定为366
+      userInfo: {},
+      type: 0,
+      showShare: false,
+      shareTitle: '',
+      shareImg: '',
+      sharePath: '',
+      articleType: -1,
+      articleId: -1,
+      shareBookId: 14,
+      songList: [{
+        title: 'Big Wolf & Little Wolf',
+        bookId: 14,
+      }],
+      songIndex: 0,
+    };
+    components = {
+      player: PlayerInner,
+      purchase: Purchase,
+      perch: Perch,
+      bar: Bar,
+      star: Star,
+      share: Share,
+    };
+    computed = {
+      getNormalConfig() {
+        return true;
+      }
+    };
+    onLoad() {
+      const id = this.id;
+      this._getImg();
+      this._getUserAccess();
+      this._getStarCount(id);
+    };
+    events = {
+      resize(small, $event) {
+        if(small) this.currentFontSize = 30;
+        else this.currentFontSize = 37;
+      },
+      numberChange(number, $event) {
+        this.starCount = this.starCount + number;
+      },
+      debounceChange(count, $event) {
+        this._updateStar(this.id, count);
+      },
+      share($event) {
+        this.showShare = true;
+        this.sharePath = `pages/wolf`;
+        this.shareTitle = '刚好有礼 | 双语有声书Big Wolf & Little Wolf';
+        const len = this.imgList.length;
+        this.shareImg = this.imgList[random_int(0, len - 1)];
+        this.articleType = 0;
+        this.articleId = this.id;
+        this.type = 1;
+      }
+    };
+    onPullDownRefresh() {
+      wx.stopPullDownRefresh();
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '刚好读书会-大狼小狼(免费)',
+        path: `/pages/wolf`,
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    async _getImg() {
+      const res = await api.getWolfImages();
+      if (res.statusCode === 200) {
+        this.imgList = res.data.images;
+        this.src = res.data.src;
+        this.$apply();
+      }
+    };
+    async _updateStar(id, count) {
+      const type = 0;
+      const data = await api.updateStar(type, id, count);
+    };
+    async _getStarCount(id) {
+      const type = 0;
+      const data = await api.getStarCount(type, id);
+      if (data.statusCode === 200) {
+        this.starCount = data.data && data.data.count ? data.data.count : 0;
+        this.$apply();        
+      }
+    };
+    async _getUserAccess() {
+      const userInfo = await api.getUserInfo();
+      this.userInfo = userInfo;
+      this.$apply();
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .wolf-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    width: 750rpx;
+    .bar {
+      position: fixed;
+      bottom: 0;
+      z-index: 100;
+      background: white;
+    }
+    .star-container {
+      position: fixed;
+      right: 50rpx;
+      bottom: 250rpx;
+    }
+    .player {
+      position: fixed;
+      display: block;
+      bottom: 100rpx;
+      z-index: 100;
+    }
+    .image {
+      width: 90%;
+      margin: 12.5rpx 0;
+    }
+    .text {
+      width: 90%;
+      text-align: left;
+      font-weight: 300;
+      line-height: 2.0;
+      margin: 12.5rpx 0;
+    }
+    .end {
+      text-align: center;
+      font-size: 35rpx;
+      font-weight: 400;
+      margin: 50rpx 0;
+    }
+    .title {
+      width: 90%;
+      text-align: left;
+      font-weight: 500;
+      margin-top: 25rpx;
+      font-size: 43rpx;
+    }
+    .time {
+      width: 90%;
+      text-align: left;
+      font-weight: 300;
+      margin: 12.5rpx 0 50rpx 0;
+      font-size: 20rpx;
+      color: #979797;
+    }
+  }
+</style>

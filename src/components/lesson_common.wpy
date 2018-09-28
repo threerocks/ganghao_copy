@@ -1,0 +1,385 @@
+<template>
+  <!-- <view class="lesson-container" style="{{showList ? 'overflow: hidden;height: 100vh;' : ''}}"> -->
+  <scroll-view class="lesson-container" @scroll="scroll" scroll-top="{{scrollTop}}" style="height: {{windowHeight}}px;" scroll-y>
+    <share :userInfo.sync="userInfo"
+          :type.sync="type"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="shareImg"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :articleId.sync="articleId"
+          :subText="subText"
+          :bookId.sync="shareBookId"
+          wx:if="{{showShare}}"
+    ></share>
+    <view class="lesson-content">
+      <player :src.sync="src" 
+              :name.sync="songName"
+              :autoNext.sync="autoNext"
+              :normal="getNormalConfig"
+              :poster.sync="poster"
+              :songList.sync="playList"
+              :songIndex.sync="currentIndex"
+              class="course-player"
+      ></player>
+      <view class="banner-container">
+        <image src="{{lesson.cover}}" class="banner" mode="widthFix"></image>
+      </view>
+      <view class="title">
+        <text selectable class="title-item">{{lesson.title}}</text>
+        <text selectable class="title-time">{{time}}</text>
+      </view>
+      <view class="content">
+        <block wx:for="{{content}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+          <view class="text" wx:if="{{item.type === 'text'}}" style="font-size: {{currentFontSize}}rpx">
+            <text selectable wx:for="{{item.value}}" wx:key="index" wx:for-index="index" wx:for-item="section" class="content-text">{{section}}</text>
+          </view>
+          <view class="reference" wx:if="{{item.type === 'reference'}}" style="font-size: {{currentFontSize}}rpx">
+            <text selectable wx:for="{{item.value}}" wx:key="index" wx:for-index="index" wx:for-item="section" class="content-reference">{{section}}</text>
+          </view>
+          <view class="image" wx:if="{{item.type === 'image'}}">
+            <image class="content-image" src="{{item.value}}" mode="widthFix"></image>
+          </view>
+          <view class="image voice-image" wx:if="{{item.type === 'voice-image'}}" @tap.stop="clickPlay({{item.voice}})">
+            <image class="content-image" src="{{item.value}}" mode="widthFix"></image>
+          </view>
+        </block>
+      </view>
+      <star class="star-container"></star>
+      <bar class="bar" :mainPage.sync="mainPage" :share.sync="share" :font.sync="font" :star.sync="star" :starCount.sync="starCount"></bar>
+      <perch class="perch"></perch>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import moment from 'moment';
+  import PlayerInner from '@/base/player-inner';
+  import Star from '@/base/star';
+  import Bar from '@/base/bar';
+  import {cdn} from '@/common/js/config';
+  import Share from '@/components/share';
+
+  export default class Index extends wepy.component {
+    props = {
+      currentIndex: {
+        type: Number,
+        default: -1,
+      },
+      starCount: {
+        type: Number,
+        default: 0,
+      },
+      userInfo: {
+        type: Object,
+        default: {},
+      },
+      bookId: {
+        type: Number,
+        default: 0,
+      },
+      playList: Array,
+      id: Number,
+      optionKey: String,
+    };
+
+    data = {
+      time: '',
+      content: [],
+      src: '',
+      songName: '',
+      epname: '',
+      lesson: {},
+      poster: `${cdn}/books/book-cover-1522377593742.jpg`,
+      currentFontSize: 30,
+      autoNext: false,
+      playObj: {},
+      scrollTop: 0,
+      windowHeight: 0,
+      mainPage: true,
+      share: true,
+      font: true,
+      star: true,
+      showShare: false,
+      type: 0,
+      shareTitle: '',
+      shareImg: '',
+      sharePath: '',
+      articleType: -1,
+      articleId: -1,
+      shareBookId: -1,
+      optionKey: '',
+      subText: '读这本书'
+    };
+    onLoad() {
+      this.windowHeight = wx.getSystemInfoSync().windowHeight;
+    };
+    onShow() {
+    };
+    computed = {
+      getNormalConfig() {
+        return true;
+      }
+    };
+    methods = {
+      clickPlay(src) {
+        const self = this;
+        if (this.playObj[src]) {
+          if (this.playObj[src].state === true) {
+            this.playObj[src].player.pause();
+            this.playObj[src].state = false;
+          } else {
+            this.playObj[src].player.play();
+            this.playObj[src].state = true;
+          }
+          this.$apply();
+
+          return;
+        }
+        this.playObj[src] = {};
+        const innerAudioContext = wx.createInnerAudioContext();
+        innerAudioContext.autoplay = true;
+        innerAudioContext.obeyMuteSwitch = false;
+        innerAudioContext.src = src;
+        innerAudioContext.onPlay(() => {
+          self.playObj[src].state = true;
+          this.$apply();
+        })
+        innerAudioContext.onError((res) => {
+          console.log(res.errMsg)
+          console.log(res.errCode)
+        })
+        this.playObj[src].player = innerAudioContext;
+        this.$apply();
+      },
+      scroll(e) {
+        if (this.optionKey) {
+          wx.setStorage({
+            key: this.optionKey,
+            data: e.detail.scrollTop,
+          });
+        }
+      }
+    };
+    events = {
+      audioEnd($event) {
+        if (this.playList.length > 0 && this.currentIndex > -1 && this.currentIndex < this.playList.length - 1) {
+          this.currentIndex++;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      prev($event) {
+        if (this.playList.length > 0 && this.currentIndex > 0 && this.currentIndex < this.playList.length) {
+          this.currentIndex--;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      next($event) {
+        if (this.playList.length > 0 && this.currentIndex > -1 && this.currentIndex < this.playList.length - 1) {
+          this.currentIndex++;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      lessonChage(index, $event) {
+        this.currentIndex = +index;
+        this.autoNext = true;
+        this.$apply();
+      },
+      resize(small, $event) {
+        if(small) this.currentFontSize = 30;
+        else this.currentFontSize = 37;
+      },
+      share($event) {
+        const id = this.id;
+        const bookId = this.bookId;
+        this.showShare = true;
+        this.sharePath = `pages/lessons?id=${id}&bookId=${bookId}`;
+        this.shareTitle = this.lesson.title;
+        this.shareImg = this.lesson.cover;
+        this.articleType = 0;
+        this.articleId = id;
+        this.shareBookId = bookId;
+        this.type = 1;
+      }
+    };
+    components = {
+      player: PlayerInner,
+      star: Star,
+      bar: Bar,
+      share: Share,
+    };
+
+    watch = {
+      currentIndex(newIndex) {
+        if (this.playList.length > 0 && newIndex > -1) {
+          const lesson = this.playList[+newIndex];
+          this.id = lesson.id;
+          this.$apply();
+        }
+      },
+      playList(newList) {
+        if (newList.length > 0 && this.currentIndex > -1) {
+          const lesson = newList[+this.currentIndex];
+          this.id = lesson.id;
+          this.$apply();
+        }
+      },
+      id (newId, oldId) {
+        if (+newId === +oldId) return;
+        else this._getLessonInfo(newId);
+        // if (typeof newId === 'number') {
+        //   this._getLessonInfo(newId);
+        // }
+      },
+      lesson(newLesson) {
+        if (newLesson.createdAt) this.time = moment(newLesson.createdAt).format('YYYY-MM-DD');
+        const content = Array.isArray(newLesson.content) ? newLesson.content : [];
+        for (const item of content) {
+          if (item.type === 'image') continue;
+          if (item.type === 'voice-image') continue;
+          if (item.value) {
+            // let value = item.value.replace('_@_@', '');
+            const list = item.value.split('_@_@');
+            const len = list.length;
+            for (let i = 0; i < len; i++) {
+              list[i] = list[i].replace(/_@/g, '\n');
+            }
+            item.value = list;
+            
+          }
+        }
+        this.content = content;
+        if (newLesson.title) this.songName = newLesson.title;
+        if (newLesson.audio) this.src = newLesson.audio + `?${new Date().getTime()}`;
+
+        this.$apply();
+      },
+      optionKey(val) {
+        try {
+          const value = wx.getStorageSync(val);
+          const self = this;
+          const timer = setTimeout(() => {
+            self.scrollTop = value;
+            self.$apply();
+          }, 200)
+        } catch (e) {
+          return;
+        }
+      }
+    };
+
+    async _getLessonInfo(id) {
+      const data = await api.getLesson(id);
+      if (data.statusCode === 200) {
+        this.lesson = data.data ? data.data : {};
+
+        this.$apply();
+      }
+    }
+
+    
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: #f0eff5;
+  .lesson-container {
+    width: 750rpx;
+  }
+  .lesson-content {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .perch {
+      margin-top: 200rpx;
+    }
+    .bar {
+      position: fixed;
+      bottom: 0;
+      z-index: 100;
+      background: white;
+    }
+    .star-container {
+      position: fixed;
+      right: 50rpx;
+      bottom: 250rpx;
+    }
+    .resize {
+      z-index: 100;
+    }
+    .course-player {
+      position: fixed;
+      display: block;
+      bottom: 100rpx;
+      z-index: 100;
+    }
+    .banner-container {
+      background-color: $bg-color;
+      .banner {
+        width: 750rpx;
+        display: block;
+      }
+    }
+    .title {
+      width: 95%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: space-around;
+      align-items: flex-start;
+      margin: 30rpx auto;
+      .title-item {
+        font-size: 38rpx;
+        margin-bottom: 10rpx;
+      }
+      .title-time {
+        font-size: 20rpx;
+        font-weight: 300; 
+      }
+    }
+    .content {
+      width: 90%;
+      margin: auto;
+      .text {
+        font-weight: 300;
+        line-height: 2.0;
+      }
+      .content-text {
+        text-align: left;
+        display: block;
+        margin: 30rpx 0;
+        line-height: 1.7;
+      }
+      .reference {
+        font-style:italic;
+        font-weight: 300;
+        line-height: 2.0;
+        margin: 20rpx 0;
+      }
+      .content-reference {
+        text-align: center;
+        display: block;
+      }
+      .content-image {
+        width: 100%;
+      }
+      .voice-image {
+        position: relative;
+        z-index: 0;
+        .play-icon {
+          width: 45rpx;
+          position: absolute;
+          bottom: 10%;
+          right: 10%;
+          z-index: 10;
+        }
+      }
+    }
+  }
+</style>

@@ -1,0 +1,380 @@
+<template>
+  <view class="course">
+    <view class="loading-container" wx:if="{{loading}}">
+      <loading></loading>
+    </view>
+    <view class="banner" wx:if="{{bookInfo.banner.isRequired}}">
+      <image src="{{bookInfo.banner.url}}" class="banner-image" mode="widthFix"></image>
+    </view>
+    <view class="header" wx:if="{{bookInfo.title.isRequired}}">
+      <text class="header-title">《{{bookInfo.title.title}}》</text>
+      <text class="header-sub-title">{{bookInfo.title.subTitle}}</text>
+    </view>
+    <view wx:if="{{access === 1}}">
+      <courseInfo :bookInfo.sync="bookInfo"></courseInfo>
+    </view>
+    <view wx:if="{{access === 2}}">
+      <view class="tab">
+        <view class="item{{tabActive === 0 ? ' item-active' : ''}} tab-left" @tap="switchTab(0)">{{leftTabText}}</view>
+        <view class="item{{tabActive === 1 ? ' item-active' : ''}} tab-right" @tap="switchTab(1)">有声书</view>
+      </view>
+      <courseList wx:if="{{lessonList.length > 0}}" :list.sync="lessonList" class="course-list"></courseList>
+      <view class="no-course" wx:if="{{lessonList.length < 1}}">
+        <image src="{{noCourseImg}}" class="no-course-image" mode="widthFix"/>
+        <view class="urge" @tap="clickUrge">我要催课</view>
+      </view>
+    </view>
+    <showToast class="show-toast" content="刚好君正在为您催促制作团队，给大师们一点压力，请您耐心等待。" wx:if="{{hiddenToast === 1}}"></showToast>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  import api from '@/common/js/api';
+  import CourseInfo from '@/components/course_info';
+  import CourseList from '@/components/course_list';
+  import ShowToast from '@/base/show-toast';
+  import Loading from '@/base/loading';
+  import Perch from '@/base/perch';
+  import BackHome from '@/base/backHome';
+  import {urlParse} from '@/common/js/func';
+
+  export default class Course extends wepy.page {
+    config = {
+      //disableScroll: true,
+      'enablePullDownRefresh': true,
+    };
+    data = {
+      staticImgList: [],
+      bookId: -1,
+      bookInfo: {},
+      audiobooks: [],
+      bilingualBooks: [],
+      lessonList: [],
+      access: 0,
+      tabActive: 0,
+      noCourseImg: '',
+      hiddenToast: 0,
+      userInfo: {},
+      loading: true,
+      getUserCount: 0,
+      text: '联系客服 回复“狐狸” 领取教材',
+      leftTabText: '双语解读',
+      campTitle: '第二期夏令营时间',
+      campTime: '8月6日-8月25日',
+
+    };
+    components = {
+      courseInfo: CourseInfo,
+      courseList: CourseList,
+      showToast: ShowToast,
+      loading: Loading,
+      perch: Perch,
+      backHome: BackHome,
+    };
+    
+    onLoad(option) {
+      if(option.q){ 
+        const link = decodeURIComponent(option.q);
+        const param = urlParse(link);
+        this.bookId = param.id;
+      } else {
+        this.bookId = option.id;
+      }
+      this._getUserInfo(true);
+    };
+    onShow() {
+
+    };
+
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this._getUserInfo().then(res => {
+        wx.hideNavigationBarLoading();
+        wx.stopPullDownRefresh();
+      });
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      let title = `刚好读书会-${this.bookInfo && this.bookInfo.title && this.bookInfo.title.title ? this.bookInfo.title.title : ''}`;
+      let url = 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg';
+      if (this.bookId === '21' || this.bookId === '22') {
+        title = '狐狸爸爸双语线上夏令营';
+        url = 'https://gh.rrdnyyy.com/books/book-cover-1528182432068.jpg';
+      }
+      return {
+        title,
+        path: `/pages/course?id=${this.bookId}`,
+        imageUrl: url,
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    methods = {
+      switchTab(index) {
+        this.tabActive = +index;
+      },
+      clickUrge() {
+        this.hiddenToast = 1;
+      },
+      saveImg() {
+        const self = this;
+        wx.previewImage({
+          urls: [self.noCourseImg] // 需要预览的图片http链接列表
+        })
+      }
+    };
+    computed = {
+      getContact() {
+        const nickName = this.userInfo.nickName ? this.userInfo.nickName : '';
+        const avatarUrl = this.userInfo.avatarUrl ? this.userInfo.avatarUrl : '';
+        return `{"source":"懒妈星球","kefu":["642", "649", "651"],"nickName":"${nickName}","avatarUrl":"${avatarUrl}"}`;
+      },
+    };
+    events = {
+      clickToastSpace($event) {
+        this.hiddenToast = 2;
+      },
+      clickToastButton($event) {
+        this.hiddenToast = 2;
+      },
+    };
+    watch = {
+      tabActive(newVal) {
+        if (+newVal === 0) {
+          this.lessonList = this.bilingualBooks;
+        } else {
+          this.lessonList = this.audiobooks;
+        }
+        this.$parent.globalData.playList = this.lessonList;
+        if (this.lessonList < 1) {
+
+        }
+        this.$apply();
+      },
+      // userInfo(newUserInfo) {
+      //   if (!newUserInfo.id) {
+      //     this._getUserInfo();
+      //   }
+      // },
+    };
+    // _setGlobalIndex(index) {
+    //   this.$parent.globalData.currentIndex = +index;
+    // };
+    async _getUserInfo(noOnce) {
+      this.bilingualBooks = [];
+      this.audiobooks = [];
+      this.lessonList = [];
+      this.$apply();
+      this.userInfo = await api.getUserInfo();
+      if (this.userInfo.id) {
+        this.loading = false;
+        await this._getCourseInfo();
+        this._getLessonList();
+        this._getUserAccess(this.userInfo.id);
+        this._getNoCourseImg();
+        this.$apply();
+
+        return this.userInfo;
+      } else {
+        if (noOnce && this.getUserCount < 10) {
+          this.getUserCount++;
+          this._getUserInfo(true);
+          this.$apply();
+        }
+      }
+      
+    }
+
+    async _getCourseInfo() {
+      const bookId = this.bookId;
+      const list = await api.getCourseInfo(bookId);
+      if (list.statusCode === 200) {
+        if (list.data.length <= 0) return;
+        this.bookInfo = list.data[0];
+        if (this.bookInfo.title && this.bookInfo.title.isRequired) {
+          wx.setNavigationBarTitle({
+            title: `${this.bookInfo.title.title}`,
+          });
+        }
+        this.$apply();
+      }
+    };
+
+    async _getNoCourseImg() {
+      const bookId = this.bookId;
+      const data = await api.getNoCourseImg(bookId);
+      if (data.statusCode === 200) {
+        this.noCourseImg = data.data.url;
+      }
+
+      this.$apply();
+    }
+
+    async _getLessonList() {
+      const bookId = this.bookId;
+      const bilingualBooks = [];
+      const audiobooks = [];
+      let lessonList = [];
+      let list = [];
+      list = await api.getLessonList(bookId);
+      if (list.statusCode === 200) {
+        for (const lesson of list.data) {
+          if (+lesson.type === 0) {
+            bilingualBooks.push(lesson);
+          } else if (+lesson.type === 1) {
+            audiobooks.push(lesson);
+          }
+        }
+        if (bilingualBooks.length === 0) {
+          lessonList = audiobooks;
+          this.tabActive = 1;
+        } else {
+          lessonList = bilingualBooks;
+          this.tabActive = 0;
+        }
+        this.bilingualBooks = bilingualBooks;
+        this.audiobooks = audiobooks;
+        this.lessonList = lessonList;
+        this.$parent.globalData.playList = lessonList;
+      }
+      this.$apply();
+    };
+
+    async _getUserAccess(id) {
+      const bookId = this.bookId;
+      let bookInfo = {};
+      if (this.bookInfo.id) {
+        bookInfo = this.bookInfo;
+      } else {
+        const list = await api.getCourseInfo(bookId);
+        if (list.statusCode === 200) {
+          if (list.data.length <= 0) return;
+          bookInfo = list.data[0];
+        }
+      }
+      const type = bookInfo.purchase_type;
+      switch (type) {
+        case 0: {
+          const info = await api.getPurchaseRecordInfo(bookId, id);
+          if (info.data) this.access = 2;
+          else this.access = 1;
+          break;
+        }
+        case 1: {
+          const info = await api.getVipInfo(id, 1);
+          if (info.data) this.access = 2;
+          else this.access = 1;
+          break;
+        }
+        case 2: {
+          const purchaseRecordInfo = await api.getPurchaseRecordInfo(bookId, id);
+          const vipInfo = await api.getVipInfo(id, 1);
+          if (purchaseRecordInfo.data || vipInfo.data) this.access = 2;
+          else this.access = 1;
+          break;
+        }
+        default:
+          break;
+      }
+      this.$apply();
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $font-size: 30rpx;
+  $color: #d19e69;
+  .loading-container {
+    width: 750rpx;
+    height: 100vh;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .course {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .no-course {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .no-course-image {
+        width: 95%;
+      }
+      .urge {
+        width: 95%;
+        border: 2px solid $color;
+        border-radius: 10rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: $color;
+        padding: 10rpx 0;
+        margin: 50rpx 0;
+      }
+    }
+    .banner {
+      .banner-image {
+        width: 750rpx;
+      }
+    }
+    .header {
+      width: 750rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      padding: 20rpx 0;
+      .header-title, .header-sub-title{
+        width: 90%;
+        margin: 15rpx 0;
+      }
+      .header-sub-title {
+        font-size: $font-size;
+        font-weight: 300;
+      }
+    }
+    .tab {
+      width: 750rpx;
+      height: 70rpx;
+      line-height: 70rpx;
+      background: #f0eff5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 35rpx;
+      font-weight: 300;
+      .item {
+        width: 375rpx;
+        height: 100%;
+        text-align: center;
+      }
+      .item-active {
+        color: #6ea232;
+        font-weight: 400;
+      }
+      .tab-left {
+        border-right: 2px solid white;
+      }
+      .tab-right {
+
+      }
+    }
+    .show-toast {
+      position: fixed;
+      top: 0;
+    }
+  }
+</style>

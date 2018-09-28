@@ -1,0 +1,157 @@
+<template>
+  <view class="bought-container">
+    <view class="shelf-header">
+      <view class="left">
+        <image src="../common/images/book-icon.png" class="book-icon" />
+        <text>已购书单</text>
+      </view>
+      <view class="right">
+        <text>点击封面立即阅读</text>
+      </view>
+    </view>
+    <view class="shelf">
+      <block wx:for="{{books}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+        <view class="shelf-layer">
+          <block wx:for="{{item}}" wx:key="index" wx:for-index="index" wx:for-item="book">
+            <view class="book" @tap="select({{book.id}})">
+              <image src="{{cdn + book.cover}}" mode="aspectFill" />
+            </view>
+          </block>
+        </view>
+      </block>
+      <perch></perch>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Perch from '@/base/perch';
+  import {cdn} from '@/common/js/config';
+  import api from '@/common/js/api';
+  import {normalizeBooks} from '@/common/js/func';
+
+  export default class Bought extends wepy.page {
+    config = {
+      'navigationBarTitleText': '我的已购',
+    };
+    components = {
+      perch: Perch,
+    };
+    data = {
+      books: [],
+      cdn,
+      userId: -1,
+    };
+    onLoad(option) {
+      this.userId = option.userId;
+      //this.userId = 2;
+      this._getBoughtProducts();
+    };
+    onPullDownRefresh() {
+      wx.stopPullDownRefresh();
+    };
+    methods = {
+      select(id) {
+        if (id === 6) {
+          wx.navigateTo({
+            url: `ganghao`,
+          });
+        } else if (id === 10) {
+          wx.navigateTo({
+            url: `join`,
+          });
+        } else if (id === 14) {
+          wx.navigateTo({
+            url: `wolf`,
+          });
+        } else if (id >= 11) {
+          wx.navigateTo({
+            url: `special?id=${id}`,
+          });
+        } else {
+          wx.navigateTo({
+            url: `course?id=${id}`,
+          });
+        }
+      },
+    }
+    async _getBoughtProducts() {
+      const res = await api.getBoughtProducts(this.userId);
+      if (res.statusCode === 200) {
+        const books = normalizeBooks(res.data);
+        this.books = books;
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .bought-container {
+    $bg-color: #f0eff5;
+    $book-height: 250rpx;
+    $book-width: 250rpx;
+    $color-gradient-top: #D8D8D8;
+    $color-gradient-bottom: #EEEEEE;
+    .shelf-header {
+      height: 90rpx;
+      background-color: #E4E4E4;
+      display: flex;
+      flex-flow: row nowrap;
+      .left {
+        width: 50%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding-left: 50rpx;
+        .book-icon {
+          width: 60rpx;
+          height: 40rpx;
+          margin-right: 50rpx;
+        }
+        text {
+          font-size: 30rpx;
+        }
+      }
+      .right {
+        width: 50%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding-right: 50rpx;
+        text {
+          font-size: 20rpx;
+        }
+      }
+    }
+    .shelf {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .shelf-layer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 750rpx;
+        height: $book-height;
+        background-image: linear-gradient(0deg, $color-gradient-top 0%, $color-gradient-bottom 100%);
+        .book {
+          width: $book-width;
+          height: $book-height;
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          image {
+            width: $book-height * 0.8 *0.666;
+            height: $book-height * 0.8;
+          }
+        }
+      }
+      .loading {
+        margin-top: $book-height;
+      }
+    }
+  }
+</style>

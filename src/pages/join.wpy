@@ -1,0 +1,220 @@
+<template>
+  <view class="join-container">
+    <text class="title">Join Us公益计划</text>
+    <text class="time">2018-02-06</text>
+    <text class="text group">每个小朋友都应该拥有快乐的童年。</text>
+    <text class="text">从夏到冬，再从冬到夏，</text>
+    <text class="text">很幸运的，</text>
+    <text class="text">刚好读书会陪伴了很多小朋友的成长。</text>
+    <text class="text">他们来自北京同心实验学校，是可爱的农民工子弟小学生，</text>
+    <text class="text group">在北京东北五环的地方，有着灿烂的童年。</text>
+    <text class="text">如果你也想加入我们，</text>
+    <text class="text">给小朋友们讲少年侦探团的故事，</text>
+    <text class="text">还有座头鲸、独角仙，</text>
+    <text class="text">当然还有The Little Prince，</text>
+    <text class="text">或者只是一起疯跑，做游戏，像个真正的孩子那样，</text>
+    <text class="text">请将你的联系方式留言给我们，</text>
+    <text class="text group">或者加微信hanghaojun，刚好君在等你哦。</text>
+    <text class="text">嘘～ 刚好的灵感也来自小朋友们，</text>
+    <text class="text">最炎热的夏天里，我们的志愿者在小学校园里还受到了来自勇敢</text>
+    <text class="text">小朋友的保护呢。</text>
+    <text class="text">“老师老师，你过来，那里有马蜂窝，别怕，我保护你。”</text>
+    <text class="text group">小朋友笃定的目光，让世界都明亮起来。</text>
+    <block wx:for="{{imgList}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+      <image mode="widthFix" src="{{item}}" class="image" />
+    </block>
+    <text class="info-text">填写您的信息，加入我们：</text>
+    <view class="info">
+      <text class="item"><text class="imporent">*</text>姓名：</text><input class="input" @input="bindNameInput" />
+    </view>
+    <view class="info">
+      <text class="item"><text class="imporent">*</text>电话：</text><input class="input" @input="bindPhoneInput" />
+    </view>
+    <view class="info">
+      <text class="item">邮件：</text><input class="input" @input="bindEmailInput" />
+    </view>
+    <view class="info">
+      <text class="item">所在城市：</text><input class="input" @input="bindCityInput" />
+    </view>
+    <button type="primary" @tap="join" class="button"> 立刻加入 </button>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+
+  export default class Index extends wepy.page {
+    data = {
+      imgList: [],
+      name: '',
+      phone: '',
+      email: '',
+      city: '',
+    };
+    config = {
+      'navigationBarTitleText': 'Join us',
+    };
+    onLoad() {
+      this._getImages();
+      this._getUserInfo();
+    };
+    onPullDownRefresh() {
+      wx.stopPullDownRefresh();
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '刚好读书会-Join Us',
+        path: '/pages/join',
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    methods = {
+      join() {
+        this._createInfo();
+      },
+      bindNameInput(e) {
+        this.name = e.detail.value;
+      },
+      bindPhoneInput(e) {
+        this.phone = e.detail.value;
+      },
+      bindEmailInput(e) {
+        this.email = e.detail.value;
+      },
+      bindCityInput(e) {
+        this.city = e.detail.value;
+      },
+    };
+
+    async _getUserInfo() {
+      this.userInfo = await api.getUserInfo();
+      this.$apply();
+    };
+
+    async _createInfo() {
+      if (!this.name) {
+        wx.showToast({
+          title: '请填入姓名',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+        return;
+      }
+      if (!this.phone) {
+        wx.showToast({
+          title: '请填入电话',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+        return;
+      }
+      const data = {
+        userId: this.userInfo.id,
+        name: this.name,
+        phone: this.phone,
+        email: this.email,
+        city: this.city,
+      };
+      const result = await api.createJoinUsInfo(data);
+      if (result.statusCode === 200) {
+        wx.showToast({
+          title: '提交成功',
+          icon: 'success',
+          duration: 2000
+        })
+      } else {
+        wx.showToast({
+          title: '提交失败',
+          icon: 'warn',
+          duration: 2000
+        })
+      }
+    };
+
+    async _getImages() {
+      const images = await api.getJoinImages();
+      if (images.statusCode === 200) {
+        this.imgList = images.data;
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .join-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .title {
+      width: 700rpx;
+      text-align: left;
+      font-weight: 500;
+      margin-top: 25rpx;
+      font-size: 43rpx;
+    }
+    .time {
+      width: 700rpx;
+      text-align: left;
+      font-weight: 300;
+      margin: 12.5rpx 0 50rpx 0;
+      font-size: 20rpx;
+      color: #979797;
+    }
+    .text {
+      width: 700rpx;
+      text-align: left;
+      font-weight: 300;
+      margin: 12.5rpx 0;
+      font-size: 30rpx;
+    }
+    .info-text {
+      width: 700rpx;
+      text-align: left;
+      font-weight: 400;
+      margin: 12.5rpx 0 25rpx 0;
+      font-size: 30rpx;
+    }
+    .group {
+      margin-bottom: 50rpx;
+    }
+    .image {
+      width: 700rpx;
+      margin: 12.5rpx 0;
+    }
+    .button {
+      width: 700rpx;
+      margin: 25rpx 0 12.5rpx 0;
+      background-color: #d19e69;
+    }
+  }
+  .info {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 700rpx;
+    margin: 20rpx 0;
+    .item {
+      width: 125rpx;
+      font-size: 25rpx;
+    }
+    .imporent {
+      color: red;
+    }
+    .input {
+      width: 575rpx;
+      border: 1px solid #979797;;
+    }
+  }
+</style>

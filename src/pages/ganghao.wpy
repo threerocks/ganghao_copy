@@ -1,0 +1,109 @@
+<template>
+  <view>
+    <view class="loading-container" wx:if="{{loading}}">
+      <loading></loading>
+    </view>
+    <member :bookId.sync="bookId" :access.sync="access" :scroll.sync="scroll" wx:if="{{!loading}}"></member>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Member from '@/components/member';
+  import Loading from '@/base/loading';
+  import api from '@/common/js/api';
+
+  export default class Ganghao extends wepy.page {
+    data = {
+      bookId: -1,
+      loading: true,
+      userInfo: {},
+      access: 0,
+      scroll: 0,
+      getUserCount: 0,
+    };
+    config = {
+      'navigationBarTitleText': '刚好',
+    };
+    onLoad(option) {
+      this.bookId = option.bookId;
+      this._getUserInfo(true);
+    };
+    onShow(){
+      //this._getUserInfo();
+    };
+    onPullDownRefresh() {
+      this._getUserInfo();
+      wx.stopPullDownRefresh();
+    };
+    onPageScroll(e) {
+      this.scroll = e.scrollTop;
+      this.$apply();
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '刚好读书会-会员',
+        path: '/pages/ganghao',
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    components = {
+      member: Member,
+      loading: Loading,
+    };
+
+    watch = {
+      // userInfo(newUserInfo) {
+      //   if (!newUserInfo.id) {
+      //     this._getUserInfo();
+      //   }
+      //   this.$apply();
+      // },
+    }
+
+    async _getUserInfo(noOnce) {
+      this.userInfo = await api.getUserInfo();
+      console.log(this.userInfo)
+      if (this.userInfo.id) {
+        this.loading = false;
+        this._getUserAccess(this.userInfo.id);
+        this.$apply();
+
+        return this.userInfo;
+      } else {
+        if (noOnce && this.getUserCount < 10) {
+          this.getUserCount++;
+          this._getUserInfo(true);
+          this.$apply();
+        }
+      }
+    }
+    async _getUserAccess(id) {
+      const info = await api.getVipInfo(id);
+      if (info.data) this.access = 2;
+      else this.access = 1;
+
+      this.$apply();
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .loading-container {
+    width: 750rpx;
+    height: 100vh;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+</style>

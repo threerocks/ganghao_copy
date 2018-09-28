@@ -1,0 +1,42 @@
+<template>
+  <view class="go-back">
+    <view class="back-btn" @tap="goHome">
+      <image src="../common/images/home.svg" class="back-img"/>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  
+  export default class Index extends wepy.component {
+    methods = {
+      goHome() {
+        wx.navigateTo({
+          url: `index`,
+        });
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .go-back {
+    position: fixed;
+    bottom: 150rpx;
+    right: 20rpx;
+    .back-btn {
+      width: 100rpx;
+      height: 100rpx;
+      border-radius: 50%;
+      background: #ea5501;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .back-img {
+        width: 50rpx;
+        height: 50rpx;
+      }
+    }
+  }
+</style>

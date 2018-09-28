@@ -1,0 +1,15 @@
+<template>
+
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class QA extends wepy.component {
+    
+  }
+</script>
+
+<style type="scss">
+
+</style>

@@ -1,0 +1,578 @@
+<template>
+  <view class="member-container">
+    <view class="image-container">
+      <image src="{{images.banner.url}}" class="image image-banner" mode="widthFix"/>
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">刚好读书会</text>
+      <text class="banner-text-content-big">全网唯一大师团队解读世界经典</text>
+      <text class="banner-text-content-big">可听可读的私人图书馆</text>
+      <text class="banner-text-content-big">审美和智力的精神聚落</text>
+    </view>
+    <view class="image-container">
+      <image src="{{images.header.url}}" class="image image-header" mode="widthFix"/>
+    </view>
+    <view class="image-container">
+      <image src="{{images['member-text'].url}}" class="image image-ganghao-text" mode="widthFix"/>
+    </view>
+    <text class="text title title-margin">刚好的书单</text>
+    <view class="member-books">
+      <block wx:for="{{books}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+        <view class="book" @tap="select({{item.id}})">
+          <image class="book-cover" src="{{cdn + item.cover}}" mode="aspectFill" />
+          <view class="book-right">
+            <view class="book-right-title">
+              <text class="book-alias">{{item.alias}}</text>
+              <text class="book-name">{{item.name}}</text>
+            </view>
+            <text class="book-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+    <view class="player">
+      <player :poster.sync="poster" :src.sync="src" :name.sync="songName" :normal="getNormalConfig"></player>
+    </view>
+    <view class="player-text">主讲：乐静老师</view>
+    <view class="image-container">
+      <image src="{{images.teachers.url}}" class="image image-teachers" mode="widthFix"/>
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">刚好的伙伴们</text>
+      <text class="banner-text-content">中国原版书第一人乐静老师，携手语言学者、</text>
+      <text class="banner-text-content">翻译家、国内外名校在任教授共同打造的诚意</text>
+      <text class="banner-text-content">精品。</text>
+    </view>
+    <!-- <text class="text title">刚好双语读书会为谁而来？</text>
+    <view class="image-container image-container-small">
+      <image src="{{images.inspire.url}}" class="image image-inspire" />
+    </view>
+    <view class="image-container image-container-small-text">
+      <image src="{{images['inspire-text'].url}}" class="image image-inspire-text" />
+    </view>
+    <text class="text title title-margin">刚好的伙伴们</text>
+    <view class="ganghao-text introduction">
+      <text class="text">乐静 乐乐老师 前新东方顶级明星教师，</text>
+      <text class="text">100000人原版书精读社群打造者连续成功</text>
+      <text class="text">创业者，横跨在线教育、金融房地产及医</text>
+      <text class="text">疗美容多个领域</text>
+    </view>
+
+    <text class="text title title-margin">加入刚好双语读书会你将收获什么？</text>
+    <view class="ganghao-text introduction">
+      <text class="text">| 双语精讲语音节目160期</text>
+      <text class="text">| 双语有声书 / 原版有声书+电子书</text>
+      <text class="text">| 优质读者社群，不定期线下沙龙</text>
+    </view> -->
+    <view class="image-container image-container-small">
+      <image src="{{images.elsewhere.url}}" class="image" mode="widthFix"/>
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">畅读经典故事</text>
+      <text class="banner-text-content">每一个穿越时光的经典故事，可以精读可</text>
+      <text class="banner-text-content">以细听，也可以用20个美好的晚上，</text>
+      <text class="banner-text-content">听乐静老师讲给你。</text>
+    </view>
+    <view class="image-container image-container-small">
+      <image src="{{images.chemistry.url}}" class="image" mode="widthFix"/>
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">双语，生活不止一面</text>
+      <text class="banner-text-content">在“深度阅读”与“碎片化阅读”交错的时代</text>
+      <text class="banner-text-content">“读”和“读懂”是两个概念，</text>
+      <text class="banner-text-content">精读是一种思考方式。</text>
+    </view>
+    <view class="image-container image-container-small">
+      <image src="{{images.soulmate.url}}" class="image" mode="widthFix"/>
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">一书一世界</text>
+      <text class="banner-text-content">愿你灵魂自由、心不枯竭，</text>
+      <text class="banner-text-content">在阅读世界的时候也遇到真的自己。</text>
+    </view>
+    <view class="image-container image-container-small">
+      <image src="{{images.cheers.url}}" class="image" mode="widthFix" />
+    </view>
+    <view class="banner-text">
+      <text class="banner-text-title">刚好的精神聚落</text>
+      <text class="banner-text-content">在这里，大家互相陪伴</text>
+      <text class="banner-text-content">获得灵感与启发，</text>
+      <text class="banner-text-content">让阅读成为打破庸常生活的捷径，</text>
+      <text class="banner-text-content">让美好的人结伴而行。</text>
+    </view>
+    <view class="image-container image-container-small">
+      <image src="{{images.inspire.url}}" class="image image-inspire" mode="widthFix" />
+    </view>
+    <view class="image-container image-container-small" @tap.stop="clickVideo">
+      <image src="{{images.player.url}}" class="image image-inspire" mode="widthFix" />
+    </view>
+    <view class="video-container" hidden="{{!videoShow}}" @tap.stop="clickVidioSpace">
+      <video src="{{images.player.video}}" custom-cache="{{false}}" controls class="video" @error="videoError" id="video" @tap.stop="clickVidioPlayer"></video>
+    </view>
+    <text class="text title">刚好双语读书会为谁而来？</text>
+    <view class="image-container image-container-small-text">
+      <image src="{{images['inspire-text'].url}}" class="image image-inspire-text" />
+    </view>
+    <perch></perch>
+    <purchase :leftText.sync="leftText"
+              :rightText.sync="rightText"
+              wx:if="{{access === 1}}"
+              :type.sync="purchaseType"
+    ></purchase>
+
+    <view class="vipBox" wx:if="{{access === 2}}" @tap.stop="gotoShelf">
+      已是会员 立即读书
+    </view>
+
+    <view wx:if="{{hasCoupon}}" class="coupon-page">
+      <coupon title="刚好读书会-会员"
+              desc="加入刚好读懂你的双语阅读俱乐部"
+              :coupons.sync="couponList"
+              :price.sync="price"
+      ></coupon>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Perch from '@/base/perch';
+  import PlayerInner from '@/base/player-inner';
+  import Coupon from '@/base/coupon';
+  import Purchase from '@/base/purchase';
+  import api from '@/common/js/api';
+  import {vipPrice} from '@/common/js/config';
+  import {normalizeImages, normalizeMemberBooks} from '@/common/js/func';
+  import {memberBooks, memberBooksInfo} from '@/common/js/config';
+  import {cdn} from '@/common/js/config';
+
+  export default class Member extends wepy.component {
+    components = {
+      perch: Perch,
+      player: PlayerInner,
+      purchase: Purchase,
+      coupon: Coupon
+    };
+    props = {
+      bookId: Number,
+      access: Number,
+      scroll: Number,
+    };
+    data = {
+      images: {},
+      books: [],
+      poster: '',
+      src:'',
+      songName: 'Little Prince 精读免费试听版',
+      cdn,
+      hasCoupon: false,
+      purchaseType: 1,
+      couponList: [],
+      price: 0,
+      videoSrc: 'https://gh.rrdnyyy.com/video/member.mp4',
+      videoShow: false,
+      leftText: '',
+      rightText: '你还不是会员',
+      platform: '',
+    };
+
+    computed = {
+      getNormalConfig() {
+        return false;
+      }
+    };
+
+    onLoad() {
+      const res = wx.getSystemInfoSync();
+      this.platform = res.platform;
+      if (this.platform !== 'ios') {
+        this.purchaseType = -1;
+        this.leftText = '加入刚好会员：¥698/终身';
+        this.rightText = '确认支付';
+      }
+      this.price = vipPrice;
+      this._getImages();
+      this._getBooks();
+      this.videoContext = wx.createVideoContext('video');
+      //this._getUserAccess();
+    };
+
+    events = {
+      purchase: ($event) => {
+        this._purchase();
+      },
+      purchaseLeft: ($event) => {
+        this._purchase();
+      },
+      clickCouponSpace: ($event) => {
+        this.hasCoupon = false;
+        this.$apply();
+      },
+      clickCouponPurchase: (price, id, $event) => {
+        this._purchase(price, id);
+      },
+    };
+
+    async _purchase(price, couponId) {
+      if (this.platform === 'ios') {
+        return;
+      }
+      const bookId = this.bookId;
+      const userInfo = await api.getUserInfo();
+      const self = this;
+      let totalFee = vipPrice * 100;
+      if (price) totalFee = price * 100;
+      const coupons = await api.getCouponPurchase(userInfo.id, vipPrice, -1);
+      if (!this.hasCoupon && coupons && coupons.data.length > 0) {
+        this.couponList = coupons.data;
+        this.hasCoupon = true;
+        this.$apply();
+
+        return;
+      }
+      const goods = '会员';
+      const paymentType = 1;
+
+      const result = await api.unifiedorder({
+        userId: userInfo.id,
+        openid: userInfo.openid,
+        paymentType,
+        goods, 
+        totalFee,
+      });
+
+      const payObj = {
+        timeStamp: result.data.timeStamp,
+        nonceStr: result.data.nonce_str,
+        package: result.data.prepayId,
+        signType: 'MD5',
+        paySign: result.data.paySign,
+        success: function (res) {
+          const data = {
+            id: result.data.id,
+            userId: userInfo.id,
+            orderId: result.data.out_trade_no,
+            paymentType,
+          };
+          self.hasCoupon = false;
+          self.$apply();
+          if (couponId) {
+            api.setCouponUsed(couponId).then(res => {
+              if (bookId && bookId !== -1 && bookId < 11) {
+                wx.redirectTo({
+                  url: `course?id=${bookId}`,
+                });
+              } else if(bookId && bookId !== -1 && bookId >= 11) {
+                wx.redirectTo({
+                  url: `special?id=${bookId}`,
+                });
+              } else {
+                wx.redirectTo({
+                  url: `ganghao`,
+                });
+              }
+            }).catch(e => console.error(e));
+          } else {
+            if (bookId && bookId !== -1 && bookId < 11) {
+              wx.redirectTo({
+                url: `course?id=${bookId}`,
+              });
+            } else if(bookId && bookId !== -1 && bookId >= 11) {
+              wx.redirectTo({
+                url: `special?id=${bookId}`,
+              });
+            } else {
+              wx.redirectTo({
+                url: `ganghao`,
+              });
+            }
+          }
+        },
+        fail: function (res) {
+          self.hasCoupon = false;
+          self.$apply();
+        }
+      }
+      wx.requestPayment(payObj)
+    }
+
+    async _getImages() {
+      const images = await api.getMemberImages();
+      if (images.statusCode === 200) {
+        this.images = normalizeImages(images.data);
+        this.poster = this.images.ethen.url;
+        this.src = this.images.ethen.voice;
+        this.$apply();
+      }
+    };
+
+    async _getBooks() {
+      const by = 'position';
+      const books = await api.getBooks(by);
+      if (books.statusCode === 200) {
+        this.books = normalizeMemberBooks(books.data, memberBooks, memberBooksInfo);
+        this.$apply();
+      }
+    };
+
+    // async _getUserAccess() {
+    //   const userInfo = await api.getUserInfo();
+    //   const info = await api.getVipInfo(userInfo.id);
+    //   if (info.data) this.access = 2;
+    //   else this.access = 1;
+    //   this.$apply();
+    // }
+    watch = {
+      access(newValue) {
+
+      },
+      scroll(newValue) {
+        if (this.videoShow === true) {
+          this.videoShow = false;
+          this.videoContext.pause();
+          this.$apply();
+        } else {
+          return;
+        }
+      }
+    }
+    methods = {
+      select(id) {
+        wx.navigateTo({
+          url: `course?id=${id}`,
+        });
+      },
+      gotoShelf() {
+        wx.navigateTo({
+          url: `index`,
+        });
+      },
+      clickVideo() {
+        this.videoShow = true;
+        this.videoContext.play();
+        this.$apply();
+      },
+      clickVidioPlayer() {
+        this.videoContext.exitFullScreen();
+      },
+      clickVidioSpace() {
+        if (this.videoShow === true) {
+          this.videoShow = false;
+          this.videoContext.pause();
+          this.$apply();
+        } else {
+          return;
+        }
+      },
+      videoError(e) {
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: #f0eff5;
+  $line-color: rgba(206, 206, 206, 0.5);
+  $ratio: 9 / 16;
+  $font-size-small: 25rpx;
+  $font-size-normal: 32rpx;
+  $font-size: 40rpx;
+  $book-height: 230rpx;
+  .member-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    font-family: 'PingFang HK';
+    .video-container {
+      width: 750rpx;
+      height: 100vh;
+      background: rgb(0,0,0);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 9999;
+      .video {
+        width: 750rpx;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+      }
+    }
+    .vipBox {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 100;
+      width: 750rpx;
+      height: 100rpx;
+      line-height: 100rpx;
+      text-align: center;
+      background: #d19e69;
+      color: white;
+      font-size: 30rpx;
+      font-weight: 300;
+    }
+    .coupon-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 2000;
+    }
+    .text-small {
+      display: block;
+      text-align: center;
+      font-size: $font-size-small;
+    }
+    .text {
+      display: block;
+      text-align: center;
+      line-height: 2;
+      width: 100%;
+      font-size: $font-size-normal;
+      font-weight: 300;
+    }
+    .title {
+      font-size: 48rpx;
+      text-align: center;
+      font-weight: 200;
+      width: 720rpx;
+      color: #4A4A4A;
+      padding: 140rpx 0 50rpx 0;
+    }
+    .title-margin {
+      width: 660rpx;
+    }
+    .image {
+      width: 100%;
+      display: block;
+    }
+    .image-container {
+      width: 100%;
+      background-color: $bg-color;
+      margin-bottom: 2px;
+      min-height: 100rpx;
+    }
+    .image-container-small {
+      display: flex;
+      justify-content: center;
+      background-color: $bg-color;
+      width: 750rpx;
+    }
+    .image-container-ll {
+      display: flex;
+      justify-content: center;
+      background-color: $bg-color;
+      width: 660rpx;
+      margin: 83rpx 0 95rpx 0;
+    }
+    .image-container-small-text {
+      display: flex;
+      justify-content: center;
+      background-color: white;
+      width: 620rpx;
+      .image-inspire-text {
+        width: 620rpx;
+        background-color: $bg-color;
+        margin: 60rpx 0 100rpx 0;
+      }
+    }
+    .ganghao-text {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: space-around;
+      align-items: center;
+      height: 175rpx;
+      padding: 50rpx 0;
+    }
+    .introduction {
+      padding: 0;
+      width: 660rpx;
+      height: 220rpx;;
+    }
+    .player-text {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20rpx 0 100rpx 0;
+      font-size: 25rpx;
+      font-weight: 200;
+      color: #4A4A4A;
+    }
+    .member-books {
+      width: 660rpx;
+      margin: 0 0 80rpx 0;
+      .book {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 26rpx 0;
+        border-bottom: 1px solid $line-color;
+        // border-left: 1px dashed $line-color;
+        // border-right: 1px dashed $line-color;
+        &:first-child {
+          border-top: 1px solid $line-color;
+        }
+        .book-cover {
+          width: $book-height * 0.666;
+          height: $book-height;
+          margin-left: 10rpx;
+        }
+        .book-right {
+          width: 68%;
+          height: $book-height;
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: space-around;
+          align-items: flex-start;
+          .book-right-title {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: space-around;
+            align-items: flex-start;
+            &::after {
+              content: '';
+              width: 65rpx;
+              height: 1px;
+              background-color: $line-color;
+              margin-top: 20rpx;
+            }
+          }
+          .book-name, .book-alias {
+            font-size: 30rpx;
+            font-weight: 400;
+          }
+          .book-desc {
+            font-size: $font-size-small;
+            font-weight: 300;
+          }
+        }
+      }
+    }
+    .banner-text {
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      color: #4a4a4a;
+      margin: 30rpx 0 160rpx 0;
+      .banner-text-title {
+        font-weight: 300;
+        font-size: 48rpx;
+        margin: 34rpx 0 50rpx 0;
+      }
+      .banner-text-content {
+        font-weight: 200;
+        font-size: 31rpx;
+        margin: 10rpx 0;
+        color: #4a4a4a;
+      }
+      .banner-text-content-big {
+        font-weight: 100;
+        font-size: 34rpx;
+        margin: 10rpx 0;
+      }
+    }
+  }
+</style>

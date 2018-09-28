@@ -1,0 +1,118 @@
+<template>
+  <view class="lesson-list">
+    <view wx:for="{{list}}" wx:key="index" wx:for-index="index" wx:for-item="item" class="lesson" @tap="select({{item}}, {{index}})">
+      <image bindload="imageLoad" src="{{item.poster ? item.poster : item.cover}}" mode="widthFix" class="cover"/>
+      <view class="content">
+        <view class="top" style="height:{{coverHeight / 2}}rpx;min-height: 50rpx;">
+          {{item.title}}
+        </view>
+        <view class="bottom" style="height:{{coverHeight / 2}}rpx;min-height: 50rpx;">
+          <view class="message">
+            <!-- <image src="../common/images/message.svg" mode="widthFix" class="message-icon"/>
+            <text class="message-num">66</text> -->
+          </view>
+          <view class="time">
+            {{item.createdAt}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import moment from 'moment';
+
+  export default class CourseList extends wepy.component {
+    props = {
+      list: [],
+    };
+
+    data = {
+      coverHeight: 0,
+    };
+
+    methods = {
+      select(item, index) {
+        wx.navigateTo({
+          url: `lessons?id=${item.id}&bookId=${item.book_id}&index=${index}`
+        });
+      },
+      imageLoad(e) {
+        const originalWidth = e.detail.width;
+        const originalHeight = e.detail.height;
+        const radio = originalWidth / originalHeight;
+
+        this.coverHeight = 200 / radio;
+      },
+    };
+
+    watch = {
+      list(newList) {
+        for (const item of newList) {
+          item.createdAt = moment(item.createdAt).format('YYYY-MM-DD');
+        }
+      }
+    };
+
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $icon-height: 25rpx;
+  $cover-width: 200rpx;
+  .lesson-list {
+    width: 750rpx;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    .lesson {
+      width: 95%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30rpx 0;
+      border-bottom: 1px solid #D8D8D8;
+      .cover {
+        width: $cover-width;
+        border-radius: 3px;
+        height: 9 / 16 * $cover-width;
+      }
+      .content {
+        width: 512rpx;
+        padding-left: 20rpx;
+        .top {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          font-size: 30rpx;
+          font-weight: 300;
+        }
+        .bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          .message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            .message-icon {
+              width: $icon-height;
+            }
+            .message-num {
+              font-size: 22rpx;
+              font-weight: 300;
+              margin-left: 10rpx;
+            }
+          }
+          .time {
+            font-size: 22rpx;
+            font-weight: 300;
+          }
+        }
+      }
+    }
+  }
+</style>

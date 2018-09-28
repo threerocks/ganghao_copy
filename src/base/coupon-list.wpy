@@ -1,0 +1,139 @@
+<template>
+  <view class="list-container" @tap.stop="clickList">
+    <block wx:for="{{coupons}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+      <view class="stamp stamp01"  @tap.stop="clickCoupon({{item}})">
+        <view class="cover"></view>
+        <view class="content">
+          <view class="left">
+            <view class="top">
+              {{item.name}}
+            </view>
+            <view class="middle">
+              <text>￥</text>
+              <text>{{item.price}}</text>
+            </view>
+            <view class="bottom">
+              <text>{{item.desc}}</text>
+              <text>使用范围：{{item.products.length > 0 ? item.products : '店铺通用'}}</text>
+            </view>
+          </view>
+          <view class="right">
+            <text>领取时间</text>
+            <text>{{item.time}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class CouponList extends wepy.component {
+    props = {
+      coupons: Array,
+    };
+    methods = {
+      clickList() {
+      },
+      clickCoupon(item) {
+        this.$emit('selectCoppon', item);
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $content-width: 650rpx;
+  .list-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    .stamp {
+      width: 667.5rpx;
+      height: 225rpx;
+      // padding: 0 20rpx;
+      position: relative;
+      overflow: hidden;
+      margin-top: 30rpx;
+      &::before {
+        content: '';
+        position: absolute;
+        width: $content-width;
+        height: 100%;
+        background: #F39B00;
+        z-index: 10;
+        right: 0;
+      }
+    }
+    .stamp01{
+      background: radial-gradient(transparent 0, transparent 1.5vw, #F39B00 1.5vw);
+      background-size: 37.5rpx 37.5rpx;
+      background-position: 21rpx 3.75rpx;
+      background-repeat: repeat;
+      .cover {
+        position: absolute;
+        left: 20%;
+        top: 75rpx;
+        height: 120%;
+        width: 660rpx;
+        background-color: rgba(255, 255, 255, .15);
+        transform: rotate(-30deg);
+        z-index: 20;
+      }
+      .content {
+        position: absolute;
+        width: $content-width;
+        height: 100%;
+        z-index: 30;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .left {
+          width: 427.5rpx;
+          height: 100%;
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: center;
+          align-items: flex-start;
+          padding-left: 30rpx; 
+        }
+        .top {
+          color: white;
+          font-size: 30rpx;
+        }
+        .middle {
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          color: white;
+          font-size: 30rpx;
+          margin: 22.5rpx 0 ;
+        }
+        .bottom {
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: center;
+          align-items: flex-start;
+          color: white;
+          font-size: 18.75rpx;
+          font-weight: 300;
+        }
+        .right {
+          width: 225rpx;
+          height: 100%;
+          border-left: 2px dashed rgba(255, 255, 255, .3);
+          color: white;
+          font-size: 22.5rpx;
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: center;
+          align-items: center;
+        }
+      }
+    }
+  }
+</style>

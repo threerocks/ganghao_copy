@@ -1,0 +1,426 @@
+<template>
+  <view class="today-container">
+    <share :textTitle.sync="textTitle" 
+          :textContent.sync="textContent"
+          :textRemark.sync="textRemark"
+          :textBgColor.sync="textBgColor"
+          :textColor.sync="textColor"
+          :userInfo.sync="userInfo"
+          :imgSrc.sync="imgSrc"
+          :type.sync="type"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="shareImg"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :articleId.sync="articleId"
+          wx:if="{{showShare}}"
+    ></share>
+    <view wx:for="{{dateList}}" wx:key="index" wx:for-index="index" wx:for-item="item" class="oneday">
+      <view class="date-header">
+        <text class="date-header-day">{{dateListMap[item].day}}</text>
+        <view>
+          <text class="date-header-remark" wx:if="{{dateListMap[item].remark}}">{{dateListMap[item].remark}}</text>
+          <text class="date-header-date">{{dateListMap[item].date}}</text>
+        </view>
+      </view>
+      <repeat for="{{listMap[item]}}" key="index" index="index" item="item">
+        <view wx:if="{{item.type == 1}}" class="today-card" @tap="entryArticle({{item.id}})">
+          <articleCard :starCount.sync="starMap[item.id]" :showIndex.sync="item.article.index" :articleId.sync="item.id" :title.sync="item.article.title" :urls.sync="item.article.urls"></articleCard>
+        </view>
+        <view wx:if="{{item.type == 2}}" class="today-card">
+          <view class="img-wrapper" @tap.stop="clickShareImg({{item.img}})">
+            <image src="{{item.img}}" class="img-card-item" mode="widthFix" />
+            <image src="../common/images/share.png" class="img-card-share" />
+          </view>
+        </view>
+        <view wx:if="{{item.type == 3}}" class="today-card">
+          <view class="text-preview" style="background: {{item.bgColor}}" @tap.stop="clickShareText({{item.title}}, {{item.text}}, {{item.remark}}, {{item.bgColor}}, {{item.color}})">
+            <text class="text-preview-title" style="color: {{item.color}}">{{item.title}}</text>
+            <text class="text-preview-content" style="color: {{item.color}}">{{item.text}}</text>
+            <text class="text-preview-remark" style="color: {{item.color}}">{{item.remark}}</text>
+            <image src="../common/images/share.png" class="img-card-share"/>
+          </view>
+        </view>
+        <view wx:if="{{item.type == -2}}" class="today-card">
+          <view class="img-wrapper member-wrapper" @tap.stop="entryMember">
+            <image src="{{item.img}}" class="img-card-item" mode="widthFix" />
+            <text class="member-title">加入刚好会员</text>
+            <text class="member-count">{{vipCount}}人已加入</text>
+          </view>
+        </view>
+      </repeat>
+    </view>
+    <player :name.sync="songName"
+            :startTime.sync="startTime" 
+            :src.sync="src"
+            :autoNext.sync="autoNext"
+            :newInstance.sync="newInstance"
+            :songList.sync="songList"
+            :showList.sync="showList"
+            :songIndex.sync="songIndex"
+            class="course-player"
+            wx:if="{{showPlayer}}"
+      ></player>
+    <tab :active.sync="currentTab" />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import moment from 'moment';
+  import api from '@/common/js/api';
+  import ArticleCard from '@/components/article_card'
+  import {normalizeTodayList, random_int} from '@/common/js/func'
+  import Share from '@/components/share';
+  import Tab from '@/components/tab';
+  import PlayerInner from '@/base/player-inner';
+
+  export default class Today extends wepy.page {
+    config = {
+      'navigationBarTextStyle': 'black',
+      'navigationBarTitleText': '刚好读书会',
+      'navigationBarBackgroundColor': 'white',
+      'enablePullDownRefresh': true,
+      'backgroundTextStyle': 'dark'
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        const target = res.target;
+        if (target.dataset) {
+          const data = target.dataset;
+          return {
+            title: data.title,
+            path: data.path,
+            imageUrl: data.img,
+          }
+        }
+      }
+      return {
+        title: '刚好读书会-今日',
+        path: '/page/today'
+      }
+    };
+    data = {
+      list: [],
+      listMap: {},
+      dateList: [],
+      dateListMap: {},
+      page: 1,
+      showIndex: 1,
+      title: 'xx',
+      urls: [],
+      shareTitle: '',
+      shareImg: '',
+      sharePath: 'pages/today',
+      showShare: false,
+      imgSrc: '',
+      textTitle: '',
+      textContent: '',
+      textRemark: '',
+      textBgColor: '',
+      textColor: '',
+      type: 0,
+      userInfo: null,
+      starMap: {},
+      vipCount: 0,
+      articleType: -1,
+      articleId: -1,
+      currentTab: 0,
+      showPlayer: false,
+      src: '',
+      songName: '',
+      autoNext: false,
+      poster: '',
+      songList: [],
+      songIndex: 0,
+      showList: false,
+      startTime: 0,
+      newInstance: false,
+    }
+    components = {
+      articleCard: ArticleCard,
+      share: Share,
+      tab: Tab,
+      player: PlayerInner,
+    }
+    onLoad() {
+      this._getList(this.page);
+      this._getUserInfo();
+      this._getVipCount();
+    }
+    onShow() {
+      this.showList = false;
+      const key = 'playerInfo';
+      const startTimeKey = 'playerStartTime';
+      const playerInfo = wx.getStorageSync(key);
+      const playerStartTime = wx.getStorageSync(startTimeKey);
+      if (playerInfo) {
+        this.showPlayer = true;
+        this.songList = playerInfo.songList;
+        this.songIndex = playerInfo.songIndex;
+        this.songName = playerInfo.name;
+        this.startTime = playerStartTime;
+        this.src = playerInfo.src + `?${new Date().getTime()}`;
+      };
+      this.showRefersh = true;
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this.page = 1;
+      this.list = [];
+      this._getList(this.page).then(res => {
+        wx.hideNavigationBarLoading();
+        wx.stopPullDownRefresh();
+      });
+    }
+    onReachBottom() {
+      wx.showLoading({
+        title: '玩命加载中',
+      })
+      // 页数+1
+      this.page++;
+      this._getList(this.page).then(res => {
+        wx.hideLoading();
+      })
+    }
+    methods = {
+      entryArticle(id) {
+        api.updateReadCount(1, id, 1);
+        wx.navigateTo({
+          url: `article?id=${id}`,
+        })
+      },
+      entryMember() {
+        wx.navigateTo({
+          url: `ganghao`,
+        })
+      },
+
+      clickShareImg(url) {
+        this.showShare = true;
+        this.sharePath = 'pages/today',
+        this.shareTitle = '刚好读书会-今日图片';
+        this.shareImg = url;
+        // this.imgSrc = url;
+        this.type = 2;
+      },
+      clickShareText(textTitle, textContent, textRemark, textBgColor, textColor) {
+        this.showShare = true;
+        this.sharePath = 'pages/today',
+        this.shareTitle = '刚好读书会-今日句子';
+        this.shareImg = 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg';
+        this.textTitle = textTitle;
+        this.textContent = textContent;
+        this.textRemark = textRemark;
+        this.textBgColor = textBgColor;
+        this.textColor = textColor;
+        this.type = 3;
+      }
+    }
+    events = {
+      clickArticle(id, title, img) {
+        if (!this.userInfo) this._getUserInfo();
+        this.showShare = true;
+        this.sharePath = `pages/article?id=${id}`;
+        this.shareTitle = title;
+        this.shareImg = img;
+        this.articleType = 1;
+        this.articleId = id;
+        this.type = 1;
+      },
+      clickSend() {
+        const self = this;
+
+      }
+    }
+    watch = {
+      currentTab(newValue, oldValue) {
+        if (newValue !== 0) {
+          wx.redirectTo({
+            url: `index?tabId=${newValue}`,
+          })
+        }
+      }
+    }
+    async _getList(page) {
+      const res = await api.getTodayList(page);
+      if (res.data.length < 1) return;
+      this.list = [...this.list, ...res.data];
+      await this._getArticleStarCount(this.list);
+      this.listMap = normalizeTodayList(this.list);
+      this.dateList = Object.keys(this.listMap).sort((a, b) => {
+        if (a > b) {
+          return -1;
+        } else {
+          return 1;
+        }
+      });
+      this.dateListMap = this._formatDateList(this.dateList);
+      this.$apply();
+    }
+    async _getUserInfo(noOnce) {
+      this.userInfo = await api.getUserInfo();
+      this.$apply();
+    };
+    _getArticleStarCount(list) {
+      const ids = [];
+      const promiseList = [];
+      const map = {};
+      const self = this;
+      for (const item of list) {
+        if (+item.type === 1 && !this.starMap[item.id]) {
+          ids.push(item.id);
+          //promiseList.push(api.getStarCount(1, item.id))
+        }
+      }
+      return api.getStarCount(1, 0, ids.join(',')).then(res => {
+        let i = 0;
+        for (const id of ids) {
+          map[id] = res.data[i] ? res.data[i].count : 0;
+          i++;
+        }
+        Object.assign(self.starMap, map)
+      })
+      // return Promise.all(promiseList).then(res => {
+      //   let i = 0;
+      //   for (const id of ids) {
+      //     map[id] = res[i].data ? res[i].data.count : 0;
+      //     i++;
+      //   }
+      //   Object.assign(self.starMap, map)
+      // })
+    };
+    async _getVipCount() {
+      // const res = await api.getVipCount();
+      // this.vipCount = res.data.count;
+      this.vipCount = random_int(300000, 310000)
+      this.$apply();
+    };
+    _formatDateList(list) {
+      const map = {};
+      const dayConfig = ['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'];
+      for (const item of list) {
+        const obj = {};
+        obj.date = `${moment(item).month() + 1}.${moment(item).date()}`;
+        if (moment().format('YYYY-MM-DD') === moment(item).format('YYYY-MM-DD')) {
+          obj.day = 'Today';
+          obj.remark = dayConfig[moment(item).day()]; 
+        } else {
+          obj.day = dayConfig[moment(item).day()];
+        }
+        map[item] = obj;
+      }
+      return map;
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $indent: 40rpx;
+  $boxShadow: 0 4px 3px -3px #979797;
+  .today-container {
+    padding: $indent;
+    font-family: 'PingFang HK';
+    .course-player {
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      bottom: 100rpx;
+    }
+    .oneday {
+      width: 750rpx - 2 * $indent;
+    }
+    .date-header {
+      width: 750rpx - 2 * $indent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #000000;
+      font-weight: 400;
+      margin-top: $indent;
+      .date-header-day {
+        font-size: 65rpx;
+      }
+      .date-header-remark {
+        font-size: 28rpx;
+        margin-right: 20rpx;
+      }
+      .date-header-date {
+        font-size: 40rpx;
+      }
+    }
+    .today-card {
+      width: 750rpx - 2 * $indent;
+      margin: 1.5 * $indent 0;
+      .img-card-share {
+        position: absolute;
+        width: $indent / 1.2;
+        height: $indent / 1.2;
+        right: $indent;
+        bottom: $indent;
+      }
+      .member-title {
+        display: block;
+        color: #000000;
+        padding-left: 20rpx;
+        line-height: 1.7;
+        font-size: 37rpx;
+        margin: 20rpx 0;
+      }
+      .member-count {
+        display: block;
+        color: #000000;
+        font-size: 20rpx;
+        font-weight: 200;
+        padding-left: 20rpx;
+        line-height: 1.7;
+        margin-bottom: 20rpx;
+      }
+      .member-wrapper {
+        box-shadow: 0 1px 3px #979797 !important;
+      }
+      .img-wrapper {
+        position: relative;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: $boxShadow;
+        overflow: hidden;
+        .img-card-item {
+          width: 100%;
+          display: block;
+        }
+      }
+      .text-preview {
+        position: relative;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: $boxShadow;
+        overflow: hidden;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        
+        .text-preview-title {
+          width: 750rpx - 4 * $indent;
+          font-size: 65rpx;
+          margin: 1.5 * $indent 0;
+        }
+        .text-preview-content {
+          width: 750rpx - 4 * $indent;
+          font-size: 35rpx;
+          line-height: 1.8;
+          font-weight: 300;
+        }
+        .text-preview-remark {
+          width: 750rpx - 4 * $indent;
+          font-size: 28rpx;
+          text-align: right;
+          margin: 0 $indent $indent * 4 0;
+        }
+      }
+    }
+  }
+</style>

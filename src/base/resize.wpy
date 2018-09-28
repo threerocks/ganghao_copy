@@ -1,0 +1,33 @@
+<template>
+  <view class="resize-container" @tap.stop="changeFontSize">
+    <image class="resize-icon" src="../common/images/font_{{small ? 'small' : 'big'}}.png" />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Resize extends wepy.component {
+    data = {
+      small: true,
+    };
+    methods = {
+      changeFontSize() {
+        this.small = !this.small;
+        this.$emit('resize', this.small);
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .resize-container {
+    position: fixed;
+    right: 2rpx;
+    bottom: 150rpx;
+    .resize-icon {
+      width: 120rpx;
+      height: 120rpx;
+    }
+  }
+</style>

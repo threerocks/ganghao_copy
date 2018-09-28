@@ -1,0 +1,537 @@
+<template>
+  <view class="lesson-container">
+    <view class="banner-container">
+      <image src="{{lesson.cover}}" class="banner" mode="widthFix"></image>
+    </view>
+    <view class="title">
+      <text class="title-item">{{lesson.title}}</text>
+      <text class="title-time">{{time}}</text>
+    </view>
+    <view class="content">
+      <block wx:for="{{content}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+        <view class="text" wx:if="{{item.type === 'text'}}">
+          <text wx:for="{{item.value}}" wx:key="index" wx:for-index="index" wx:for-item="section" class="content-text">{{section}}</text>
+        </view>
+        <view class="reference" wx:if="{{item.type === 'reference'}}">
+          <text wx:for="{{item.value}}" wx:key="index" wx:for-index="index" wx:for-item="section" class="content-reference">{{section}}</text>
+        </view>
+        <view class="image" wx:if="{{item.type === 'image'}}">
+          <image class="content-image" src="{{item.value}}" mode="widthFix"></image>
+        </view>
+      </block>
+    </view>
+    <perch class="perch"></perch>
+    <purchase wx:if="{{access === 1 && bookId !== 15}}"
+              :type="purchaseType"
+              rightText='线下活动，仅限会员'
+              :type.sync="purchaseType"
+    ></purchase>
+
+    <view class="purchased"  wx:if="{{access === 2 && bookId !== 15}}">
+      <editInfo :text="text"></editInfo>
+    </view>
+
+    <view class="purchased"  wx:if="{{bookId === 15}}">
+      <finishedBar :text="finishedText"></finishedBar>
+    </view>
+
+    <view class="info-card"  wx:if="{{infoCard}}"  @tap.stop="clickCardSpace">
+      <view class="card" @tap.stop="clickCard">
+        <text class="card-title">填写您的报名信息</text>
+        <text class="sub-card-title">所有选项都为必填项，信息可以随时修改</text>
+        <view class="info">
+          <text class="item">姓名：</text><input class="input" @input="bindNameInput" value="{{name}}" />
+        </view>
+        <view class="info">
+          <text class="item">电话：</text><input class="input" @input="bindPhoneInput" value="{{phone}}" />
+        </view>
+        <view class="info">
+          <text class="item">邮件：</text><input class="input" @input="bindEmailInput" value="{{email}}" />
+        </view>
+        <view class="info">
+          <text class="item">所在城市：</text><input class="input" @input="bindCityInput" value="{{city}}" />
+        </view>
+        <button type="primary" @tap.stop="join" class="button"> 报名 </button>
+      </view>
+    </view>
+
+    <view wx:if="{{hasCoupon}}" class="coupon-page">
+      <coupon :title.sync="title"
+              :coupons.sync="couponList"
+              :price.sync="price"
+      ></coupon>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import moment from 'moment';
+  import Purchase from '@/base/purchase';
+  import EditInfo from '@/base/edit_info';
+  import FinishedBar from '@/base/finished-bar';
+  import Perch from '@/base/perch';
+  import Coupon from '@/base/coupon';
+  import {specialLessonPrice} from '@/common/js/config';
+
+  export default class SecialCourse extends wepy.page {
+    data = {
+      bookId: -1,
+      time: '',
+      lesson: {},
+      content: [],
+      hasCoupon: false,
+      couponList: [],
+      price: 0,
+      access: 0,
+      title: '',
+      price: specialLessonPrice,
+      text: '立即预约',
+      finishedText: '活动已结束',
+      infoCard: false,
+      name: '',
+      phone: '',
+      email: '',
+      city: '',
+      infoId: -1,
+      userInfo: {},
+    };
+    components = {
+      perch: Perch,
+      purchase: Purchase,
+      coupon: Coupon,
+      editInfo: EditInfo,
+      finishedBar: FinishedBar,
+    };
+    computed = {
+      purchaseType() {
+        return 1;
+      }
+    };
+    onLoad(option) {
+      this.bookId = +option.id;
+      this._getLessonInfo();
+      this._getUserInfo();
+    };
+    onShow() {
+      //this._getUserInfo();
+    };
+    onPullDownRefresh() {
+      this._getUserInfo();
+      wx.stopPullDownRefresh();
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: `刚好读书会-${this.title ? this.title : ''}`,
+        path: `/pages/special?id=${this.bookId}`,
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    events = {
+      purchase: ($event) => {
+        this._purchase('right');
+      },
+      purchaseLeft: ($event) => {
+        this._purchase('left');
+      },
+      clickCouponSpace: ($event) => {
+        this.hasCoupon = false;
+        this.$apply();
+      },
+      clickCouponPurchase: (price, id, $event) => {
+        this._purchase(price, id);
+      },
+      infoButton: () => {
+        this.infoCard = true;
+      }
+    };
+
+    methods = {
+      bindNameInput(e) {
+        this.name = e.detail.value;
+      },
+      bindPhoneInput(e) {
+        this.phone = e.detail.value;
+      },
+      bindEmailInput(e) {
+        this.email = e.detail.value;
+      },
+      bindCityInput(e) {
+        this.city = e.detail.value;
+      },
+      clickCard() {
+
+      },
+      clickCardSpace() {
+        this.infoCard = false;
+      },
+      join() {
+        if (this.infoId === -1) this._createInfo();
+        else this._updateInfo();
+      }
+    };
+
+    watch = {
+      lesson(newLesson) {
+        this.time = moment(newLesson.createdAt).format('YYYY-MM-DD');
+        const content = newLesson.content;
+        for (const item of content) {
+          if (item.type === 'image') continue;
+          item.value = item.value.split('_@');
+        }
+        this.content = content;
+        this.$apply();
+      },
+      userInfo(newUserInfo) {
+        if (!newUserInfo.id) {
+          this._getUserInfo();
+        }
+        this.$apply();
+      },
+    };
+
+    async _getUserInfo() {
+      this.userInfo = await api.getUserInfo();
+      if (this.userInfo.id) {
+        this.loading = false;
+        this._getUserAccess(this.userInfo.id);
+        this._getOffline(this.userInfo.id);
+      }
+      this.$apply();
+
+      return this.userInfo;
+    }
+
+    async _getLessonInfo() {
+      const data = await api.getLessonByBookId(this.bookId);
+      if (data.statusCode === 200) {
+        this.lesson = data.data ? data.data : {};
+        this.title = this.lesson.title ? this.lesson.title : {};
+        this.$apply();
+      }
+    };
+    async _getOffline(id) {
+      const data = await api.getOffline(id, this.bookId);
+      if (data.statusCode === 200) {
+        if (data.data && data.data.id) this.infoId = data.data.id;
+        if (data.data && data.data.name) this.name = data.data.name;
+        if (data.data && data.data.phone) this.phone = data.data.phone;
+        if (data.data && data.data.email) this.email = data.data.email;
+        if (data.data && data.data.city) this.city = data.data.city;
+        this.$apply();
+      }
+    };
+
+    async _createInfo() {
+      if (!this.name || !this.phone || !this.email || !this.city) {
+          wx.showToast({
+          title: '缺少信息',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+        return;
+      }
+      const userInfo = await api.getUserInfo();
+      const data = {
+        userId: userInfo.id,
+        bookId: this.bookId,
+        name: this.name,
+        phone: this.phone,
+        email: this.email,
+        city: this.city,
+      };
+      const result = await api.createOfflineInfo(data);
+      if (result.statusCode === 200 && result.data && result.data.code !== 1) {
+        wx.showToast({
+          title: '提交成功',
+          icon: 'success',
+          duration: 2000
+        })
+      } else {
+        wx.showToast({
+          title: '提交失败',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+      }
+      this.infoCard = false;
+      this.$apply();
+    };
+
+    async _updateInfo() {
+      if (!this.name || !this.phone || !this.email || !this.city) {
+          wx.showToast({
+          title: '缺少信息',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+        return;
+      }
+      const data = {
+        name: this.name,
+        phone: this.phone,
+        email: this.email,
+        city: this.city,
+      };
+      const result = await api.updateOfflineInfo(this.infoId, data);
+      if (result.statusCode === 200 && result.data && result.data.code !== 1) {
+        wx.showToast({
+          title: '更新成功',
+          icon: 'success',
+          duration: 2000
+        })
+      } else {
+        wx.showToast({
+          title: '更新失败',
+          image: '../common/images/warning.png',
+          duration: 2000
+        })
+      }
+      this.infoCard = false;
+      this.$apply();
+    };
+    async _getUserAccess(id) {
+      const bookId = this.bookId;
+      //const info = await api.getPurchaseRecordInfo(bookId, id);
+      const vipInfo = await api.getVipInfo(id, 1);
+      if (vipInfo.data) this.access = 2;
+      else this.access = 1;
+
+      this.$apply();
+    }
+    async _purchase(position, price, couponId) {
+      const res = wx.getSystemInfoSync();
+      if (res.platform === 'ios') {
+        return;
+      }
+      if (position === 'right') {
+        wx.navigateTo({
+          url: `ganghao?bookId=${this.bookId}`
+        });
+        return;
+      }
+      const bookId = this.bookId;
+      const userInfo = await api.getUserInfo();
+      let totalFee = specialLessonPrice * 100;
+      if (price) totalFee = price * 100;
+      const coupons = await api.getCouponPurchase(userInfo.id, specialLessonPrice, bookId);
+      if (!this.hasCoupon && coupons && coupons.data.length > 0) {
+        this.couponList = coupons.data;
+        this.hasCoupon = true;
+        this.$apply();
+
+        return;
+      }
+      let goods = this.bookInfo && this.bookInfo.title && this.bookInfo.title.isRequired ? this.bookInfo.title.title : '';
+      let paymentType = 0;
+
+      const result = await api.unifiedorder({
+        userId: userInfo.id,
+        openid: userInfo.openid,
+        bookId,
+        paymentType,
+        goods, 
+        totalFee,
+      });
+      const self = this;
+      const payObj = {
+        timeStamp: result.data.timeStamp,
+        nonceStr: result.data.nonce_str,
+        package: result.data.prepayId,
+        signType: 'MD5',
+        paySign: result.data.paySign,
+        success: function (res) {
+          const data = {
+            id: result.data.id,
+            bookId,
+            userId: userInfo.id,
+            orderId: result.data.out_trade_no,
+            paymentType,
+          };
+          api.paymentSuccess(data).then(res => {
+            self.hasCoupon = false;
+            self.$apply();
+            if (couponId) {
+              api.setCouponUsed(couponId).then(res => {
+                if (bookId && bookId !== -1) {
+                  wx.navigateTo({
+                    url: `special?id=${bookId}`,
+                  });
+                } else {
+                  wx.navigateTo({
+                    url: `ganghao`,
+                  });
+                }
+              }).catch(e => console.error(e));
+            }
+          }).catch(e => console.error(e));
+        },
+        fail: function (res) {
+          self.hasCoupon = false;
+          self.$apply();
+        }
+      }
+      wx.requestPayment(payObj)
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: #f0eff5;
+  $bg-card-color: rgba(0,0,0,0.6);
+  $line-color: #f0eff5;
+  $font-size: 30rpx;
+  $bt-color: #d19e69;
+  $sub-text-color: #848484;
+  .lesson-container {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    animation: bg-info 0.3s ease-in;
+    .purchased {
+      position: fixed;
+      bottom: 0;
+    }
+    .info-card {
+      position: fixed;
+      bottom: 0;
+      width: 750rpx;
+      height: 100vh;
+      background: $bg-card-color;
+      color:black;
+      font-size: $font-size;
+      .card {
+        width: 725rpx;
+        background: white;
+        padding: 20rpx 0;
+        position: absolute;
+        left: 0; right: 0;
+        margin: auto;
+        bottom: 11.25rpx;
+        border-radius: 20rpx;
+        animation: card-info 0.3s ease-in;
+        .card-title {
+          display: block;
+          margin-left: 37.5rpx;
+          font-size: $font-size * 1.5;
+        }
+        .sub-card-title {
+          margin: 0 37.5rpx;
+          font-size: 25rpx;
+          display: block;
+          color: $sub-text-color;
+          padding-bottom: 30rpx;
+          border-bottom: 2px solid #f0eff5;
+        }
+        .info {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 30rpx 0;
+          .item {
+            width: $font-size * 6; 
+          }
+          .input {
+            width: 650rpx - $font-size * 6; 
+            height: $font-size;
+            border: 1px solid black;
+          }
+        }
+        .button {
+          width: 650rpx;
+          background: $bt-color;
+        }
+      }
+    }
+    .perch {
+      margin-top: 100rpx;
+    }
+    .banner-container {
+      background-color: $bg-color;
+      .banner {
+        width: 750rpx;
+        display: block;
+      }
+    }
+    .title {
+      width: 95%;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: space-around;
+      align-items: flex-start;
+      margin: 30rpx 0;
+      .title-item {
+        font-size: 38rpx;
+        margin-bottom: 10rpx;
+      }
+      .title-time {
+        font-size: 20rpx;
+        font-weight: 300; 
+      }
+    }
+    .content {
+      width: 95%;
+      .text {
+        font-size: 25rpx;
+        font-weight: 300;
+        line-height: 2.0;
+      }
+      .content-text {
+        text-align: left;
+        display: block;
+        margin: 30rpx 0;
+        line-height: 1.7;
+      }
+      .reference {
+        font-size: 25rpx;
+        font-style:italic;
+        font-weight: 300;
+        line-height: 2.0;
+        margin: 20rpx 0;
+      }
+      .content-reference {
+        text-align: center;
+        display: block;
+      }
+      .content-image {
+        width: 100%;
+      }
+    }
+  }
+  .coupon-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+  }
+  @keyframes bg-info {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes card-info {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, -100%, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+</style>

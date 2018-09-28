@@ -1,0 +1,287 @@
+<template>
+  <scroll-view class="content-wrapper" style="height: 100vh;" scroll-y>
+    <view class="tab_item" hidden="{{currentTab != 1}}">
+      <shelf :showPlayer.sync="showPlayer"></shelf>
+    </view>
+    <view class="tab_item" hidden="{{currentTab != 2}}">
+      <me :showRefersh.sync="showRefersh" :tabIndex.sync="currentTab"></me>
+    </view>
+    <!-- <player :src.sync="src" 
+            :name.sync="songName"
+            :autoNext.sync="autoNext"
+            :poster.sync="poster"
+            :songList.sync="songList"
+            :startTime.sync="startTime" 
+            :songIndex.sync="currentIndex"
+            :newInstance.sync="newInstance"
+            class="course-player"
+            wx:if="{{showPlayer}}"
+      ></player> -->
+    <player :name.sync="songName"
+            :startTime.sync="startTime" 
+            :src.sync="src"
+            :autoNext.sync="autoNext"
+            :newInstance.sync="newInstance"
+            :songList.sync="songList"
+            :showList.sync="showList"
+            :songIndex.sync="songIndex"
+            class="course-player"
+            wx:if="{{showPlayer}}"
+      ></player>
+    <tab :active.sync="currentTab" />
+    <trial :userId.sync="userId"
+            :cardId.sync="cardId"
+            :title.sync="title"
+            :content.sync="content"
+            :confirmText.sync="confirmText"
+            :canClick.sync="canClick"
+            wx:if="{{showTrial}}"
+    />
+  </scroll-view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import Shelf from '@/components/shelf';
+  import Ad from '@/base/ad';
+  import Me from '@/components/me';
+  import Tab from '@/components/tab';
+  import PlayerInner from '@/base/player-inner';
+  import moment from 'moment';
+  import api from '@/common/js/api';
+  import {cdn} from '@/common/js/config';
+  import {urlParse} from '@/common/js/func';
+  import Trial from '@/base/trial'
+
+  export default class Index extends wepy.page {
+    config = {
+      'navigationBarTitleText': '读书',
+      'disableScroll': true,
+    };
+    data = {
+      currentTab: 1,
+      showRefersh: false,
+      imageUrl: '',
+      adFlag: 0,
+      showPlayer: false,
+      src: '',
+      songName: '',
+      autoNext: false,
+      poster: '',
+      songList: [],
+      songIndex: 0,
+      showList: false,
+      startTime: 0,
+      newInstance: false,
+      autoNext: false,
+      // 体验卡信息
+      cardId: 0,
+      title: '',
+      userId: 0,
+      confirmText: 'Enjoy',
+      content: '',
+      showTrial: false,
+      canClick: true,
+      canIUse: wx.canIUse('official-account')
+    }
+    onPullDownRefresh() {
+      this.showRefersh = true;
+      wx.stopPullDownRefresh();
+    };
+    onLoad(option) {
+      if(option.q){ 
+        const link = decodeURIComponent(option.q);
+        const param = urlParse(link);
+        if (param.trial) {
+          this.showTrial = true;
+          this._getTrialConfig();
+        }
+      } else if(option.scene){ 
+        const scene = decodeURIComponent(option.scene);
+        if (scene) {
+          this.showTrial = true;
+          this._getTrialConfig();
+        }
+      } else if (option.trial) {
+        this.showTrial = true;
+        this._getTrialConfig();
+      }
+      if (option.tabId) {
+        this.currentTab = option.tabId;
+      }
+      console.log(wx.canIUse('official-account'))
+      wx.getSystemInfo({
+        success: function(res) {
+          console.log(res)
+      }})
+    };
+    onShow() {
+      this.showList = false;
+      const key = 'playerInfo';
+      const startTimeKey = 'playerStartTime';
+      const playerInfo = wx.getStorageSync(key);
+      const playerStartTime = wx.getStorageSync(startTimeKey);
+      if (playerInfo) {
+        this.showPlayer = true;
+        this.songList = playerInfo.songList;
+        this.songIndex = playerInfo.songIndex;
+        this.songName = playerInfo.name;
+        this.startTime = playerStartTime;
+        this.src = playerInfo.src + `?${new Date().getTime()}`;
+      };
+      this.showRefersh = true;
+      const date = moment(new Date()).format('YYYY-MM-DD');
+      const bookmarkKey = `${date}-bookmark`;
+      try {
+        const value = wx.getStorageSync(bookmarkKey);
+        if (value) {
+        } else {
+          const self = this;
+          api.getBookmark(date, date).then(data => {
+            if (data && data.data && data.data.length > 0) {
+              const img = data.data[0].img_url;
+              self.imageUrl = `${cdn}${img}`;
+              self.adFlag = 1;
+              wx.setStorageSync(bookmarkKey, true);
+              self.$apply();
+            }
+          })
+          
+          const yesterday = moment(new Date()).subtract(1, 'day').format('YYYY-MM-DD');
+          const yesterdayBookmarkKey = `${tomorrow}-bookmark`;
+          wx.removeStorage({
+            key: yesterdayBookmarkKey,
+            success: function(res) {
+              // console.log(res.data)
+            } 
+          });
+        }
+      } catch (e) {
+        return;
+      }
+    };
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        return {
+          title: '刚好读书会',
+          path: '/pages/bookmark',
+          imageUrl: this.imageUrl,
+          success: function(res) {
+            // 转发成功
+          },
+          fail: function(res) {
+            // 转发失败
+          }
+        };
+      }
+      return {
+        title: '刚好读书会',
+        path: '/pages/index',
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    components = {
+      shelf: Shelf,
+      me: Me,
+      tab: Tab,
+      ad: Ad,
+      player: PlayerInner,
+      trial: Trial,
+    };
+    events = {
+      clickAdSpace: ($event) => {
+        this.adFlag = 0;
+      },
+      clickAdButton: ($event) => {
+        this.adFlag = 0;
+      },
+      audioEnd($event) {
+        if (this.songList.length > 0 && this.songIndex > -1 && this.songIndex < this.songList.length - 1) {
+          this.songIndex++;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      prev($event) {
+        if (this.songList.length > 0 && this.songIndex > 0 && this.songIndex < this.songList.length) {
+          this.songIndex--;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      next($event) {
+        if (this.songList.length > 0 && this.songIndex > -1 && this.songIndex < this.songList.length - 1) {
+          this.songIndex++;
+          this.autoNext = true;
+          this.$apply();
+        }
+      },
+      lessonChage(index, item) {
+        if (item.bookId && +item.bookId === 14) {
+          wx.navigateTo({
+            url: 'wolf',
+          });
+        } else {
+          wx.navigateTo({
+            url: `lessons?id=${item.id}&bookId=${item.book_id}&index=${index}`,
+          });
+        }
+      }
+    };
+    methods = {
+    }
+    watch = {
+      currentTab(newValue, oldValue) {
+        if(newValue === 0) {
+          wx.navigateTo({
+            url: 'today'
+          });
+          this.currentTab = oldValue;
+        }
+      },
+      songIndex(newIndex) {
+        if (this.songList.length > 0 && newIndex > -1) {
+          const lesson = this.songList[+newIndex];
+          this.src = lesson.audio + `?${new Date().getTime()}`;
+          this.$apply();
+        }
+      },
+    };
+    async _getTrialConfig() {
+      const res = await api.getTrialConfig();
+      if (res.statusCode === 200) {
+        const key = '_3days';
+        const userInfo = await api.getUserInfo();
+        this.userId = userInfo.id;
+        const info = res.data[key];
+        this.cardId = info.id;
+        this.title = info.title;
+        this.content = info.content;
+        this.canClick = false;
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .content-wrapper {
+    overflow: auto;
+  }
+  .ad {
+    position: fixed;
+    z-index: 100;
+  }
+  .course-player {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    bottom: 100rpx;
+  }
+</style>

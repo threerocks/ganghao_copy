@@ -1,0 +1,131 @@
+<template lang="wxml" minapp="wepy">
+  <view>
+    <view wx:if="{{canClick}}" class="trial-item" @tap.stop="trial"></view>
+    <view wx:if="{{!canClick}}" class="trial-item"></view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+
+  export default class Trial extends wepy.component {
+    props = {
+      userId: {
+        type: Number,
+        default: 0,
+      },
+      cardId: {
+        type: Number,
+        default: 0,
+      },
+      title: {
+        type: String,
+        default: '会员体验',
+      },
+      content: {
+        type: String,
+        default: '',
+      },
+      showCancel: {
+        type: Boolean,
+        default: false,
+      },
+      cancelText: {
+        type: String,
+        default: '考虑一下',
+      },
+      cancelColor: {
+        type: String,
+        default: '#292F36',
+      },
+      confirmText: {
+        type: String,
+        default: '确认体验',
+      },
+      confirmColor: {
+        type: String,
+        default: '#EE4266',
+      },
+      share: {
+        type: Boolean,
+        default: false,
+      },
+      days: {
+        type: Number,
+        default: 3,
+      },
+      canClick: {
+        type: Boolean,
+        default: true,
+      },
+    };
+    methods = {
+      trial() {
+        this._trial();
+      },
+    };
+    watch = {
+      canClick(val) {
+        if (!val) {
+          setTimeout(() => {
+            this._trial();
+          }, 200);
+        }
+      },
+      userId() {
+      
+      }
+    }
+    async _trial() {
+      const cardId = this.cardId;
+      const userId = this.userId;
+      const title = this.title;
+      const content = this.content;
+      const showCancel = this.showCancel;
+      const cancelText = this.cancelText;
+      const cancelColor = this.cancelColor;
+      const confirmText = this.confirmText;
+      const confirmColor = this.confirmColor;
+      const share = this.share;
+      const days = this.days;
+      const self = this;
+      wx.showModal({
+        title,
+        content,
+        showCancel,
+        cancelText,
+        cancelColor,
+        confirmText,
+        confirmColor,
+        success: function(res) {
+          if (res.confirm) {
+            self.createTrial(cardId, userId).then((res) => {
+              const id = res.id;
+              const deadline = res.deadline;
+              if (share) {
+                wx.navigateTo({
+                  url: `trialCompleted?id=${id}&days=${days}`,
+                });
+              }
+            });
+          } else if (res.cancel) {
+            
+          }
+        }
+      })
+    };
+    async createTrial(cardId, userId, type, days) {
+      const res = await api.createTrial(cardId, userId, type, days)
+
+      return res.data;
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .trial-item {
+    width: 100%;
+    height: 100%;
+  }
+</style>

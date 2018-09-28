@@ -1,0 +1,90 @@
+<template>
+  <view class="toast-container" @tap.stop="clickSpace">
+    <view class="content" @tap.stop="clickContent">
+      <view class="text-container">
+        <text class="text" wx:for="{{contentArr}}" wx:key="index" wx:for-index="index" wx:for-item="item">{{item}}</text>
+      </view>
+      <view class="button" @tap.stop="clickButton">
+        {{btnText}}
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Index extends wepy.component {
+    props = {
+      content: String,
+      btnText: {
+        type: String,
+        default: '我知道了'
+      },
+    };
+    data = {
+      contentArr: [],
+    };
+    onLoad() {
+      if (this.content && typeof this.content === 'string') {
+        this.contentArr = this.content.split('\n');
+      }
+    };
+    methods = {
+      clickSpace() {
+        this.$emit('clickToastSpace');
+      },
+      clickContent() {
+
+      },
+      clickButton() {
+        this.$emit('clickToastButton');
+      }
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: rgba(0,0,0,0.5);
+  $font-size: 35rpx;
+  $line-color: #d3d3d3;
+  $bt-color: #d19e69;
+  $sub-tetx-color: rgb(80, 80, 80);
+  $content-color: #f7f7f7;
+  .toast-container {
+    width: 750rpx;
+    height: 100vh;
+    background: $bg-color;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .content {
+      width: 72%;
+      background: rgba(255,255,255,0.97);
+      border-radius: 30rpx;
+      .text-container {
+        color: $sub-tetx-color;
+        padding: 60rpx 40rpx;
+        line-height: 1.5;
+        text-align: center;
+        font-size: $font-size;
+        border-bottom: 1px solid $line-color;
+        font-weight: 500;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: center;
+        .text {
+          margin: 5rpx 0;
+        }
+      }
+      .button {
+        font-size: $font-size;
+        color: $bt-color;
+        text-align: center;
+        padding: 20rpx 0;
+        font-weight: 500;
+      }
+    }
+  }
+</style>

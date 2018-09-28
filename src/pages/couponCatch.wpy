@@ -1,0 +1,342 @@
+<template>
+  <view class="coupon_wrapper">
+    <view class="coupon_header">
+      <image src="{{banner}}" mode="widthFix" class="banner-img" />
+    </view>
+    <view class="coupon_content">
+      <view class="coupon-content-card">
+        <view class="desc">
+          <text>面值</text>
+        </view>
+        <view class="price">
+          <text class="price-icon">￥</text>
+          <text class="price-text">{{coupon.amount}}</text>
+        </view>
+        <view class="desc">
+          <text>卡券类型：</text>
+          <text>{{coupon.desc}}</text>
+        </view>
+        <view class="desc">
+          <text>使用范围：</text>
+          <text>{{coupon.productsInfo.length > 0 ? coupon.productsInfo : '店铺通用'}}</text>
+        </view>
+        <view class="desc">
+          <text>领取时间：</text>
+          <text>{{coupon.time}}</text>
+        </view>
+        <view class="desc">
+          <text>过期时间：</text>
+          <text>{{coupon.end_time}}</text>
+        </view>
+        <view class="desc">
+          <text>每人限领：</text>
+          <text>{{coupon.single_limit}}张</text>
+        </view>
+        <image src="../common/images/share.png" class="img-card-share" />
+      </view>
+      <view class="coupon-button-wrapper">
+        <image wx:if="{{result.code === undefined}}" src="../common/images/loading.svg" class="coupon-loading"/>
+        <view wx:if="{{result.code === 0 || result.code === 2}}" class="coupon-button active" @tap.stop="useCoupon">去使用</view>
+        <view wx:if="{{result.code === 1}}" class="coupon-button" @tap.stop="entryHome">{{result.message}}，点击返回首页</view>
+        <button open-type="getUserInfo" type="default" size="small" plain="{{plain}}" wx:if="{{!authorized}}" class="userinfo-button" @getuserinfo="clickGetUserInfo">点击获取昵称/头像</button>
+      </view>
+    </view>
+    <view class="coupon_footer">
+        <text class="footer-title">注意事项：</text>
+        <text class="footer-text" space="nbsp">1. 如果您购买过优惠券对应的课程，将直接进入课程内容页面。</text>
+        <text class="footer-text" space="nbsp">2. 可用于多个课程减免的优惠券，请访问读书会首页，进入相应课程详情页使用。</text>
+        <text></text>
+    </view>
+    <share :userInfo.sync="userInfo"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="banner"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :articleId.sync="articleId"
+          wx:if="{{showShare}}"
+    ></share>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import Share from '@/components/share';
+  import {checkAuth, urlParse} from '@/common/js/func';
+
+  export default class CouponCatch extends wepy.page {
+    config = {
+      'navigationBarTextStyle': 'black',
+      'navigationBarTitleText': '刚好读书会优惠券',
+      'navigationBarBackgroundColor': '#fffcf5',
+      'backgroundTextStyle': 'dark',
+      'enablePullDownRefresh': true,
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this._getCoupon(this.id).then(res => {
+        wx.hideNavigationBarLoading();
+        wx.stopPullDownRefresh();
+      });
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        const target = res.target;
+        if (target.dataset) {
+          const data = target.dataset;
+          return {
+            title: data.title,
+            path: data.path,
+            imageUrl: data.img,
+          }
+        }
+      }
+      return {
+        title: `您的好友${this.userInfo.nickName}赠送您${this.coupon.amount}元优惠券，快来看看吧`,
+        path: `/page/couponCatch?id=${this.id}`,
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1533870419914.jpg',
+      }
+    };
+    onLoad(option) {
+      if(option.q){ 
+        const link = decodeURIComponent(option.q);
+        const param = urlParse(link);
+        this.id = param.id;
+      } else {
+        if (option.id) {
+          this.id = option.id;
+        }
+      }
+      this._getCoupon(this.id);
+      this._checkAuth();
+    };
+    data = {
+      id: 613,
+      showShare: false,
+      banner: 'https://gh.rrdnyyy.com/books/book-cover-1533782386385.jpg',
+      coupon: {},
+      userInfo: {},
+      result: {},
+      shareTitle: '',
+      authorized: false,
+      
+    }
+    components = {
+      share: Share,
+    }
+    methods = {
+      useCoupon() {
+        const type = this.coupon.type;
+        const products = this.coupon.products;
+        if (products.indexOf(-1) >= 0) {
+          wx.navigateTo({
+            url: 'ganghao',
+          });
+          return;
+        }
+        if (products.length === 1) {
+          const id = products[0];
+          if (id === 14) {
+            wx.navigateTo({
+              url: `wolf`,
+            });
+          } else if (id >= 11 && id <= 20) {
+            wx.navigateTo({
+              url: `special?id=${id}`,
+            });
+          } else {
+            wx.navigateTo({
+              url: `course?id=${id}`,
+            });
+          }
+          return;
+        }
+
+        wx.navigateTo({
+          url: 'index',
+        });
+      },
+      entryHome() {
+        wx.navigateTo({
+          url: 'index',
+        });
+      },
+      clickGetUserInfo(e) {
+        const detail = e.detail;
+        if (detail.errMsg === 'getUserInfo:ok') {
+          const rawData = JSON.parse(detail.rawData);
+          const userInfo = this.userInfo;
+          const data = {
+            nickName: rawData.nickName,
+            avatarUrl: rawData.avatarUrl,
+            gender: rawData.gender,
+            country: rawData.country,
+            province: rawData.province,
+            city: rawData.city,
+            language: rawData.language,
+          }
+          this._upodateUserInfo(userInfo.id, data);
+          this._getCoupon(this.id);
+          this.authorized = true;
+        }
+      }
+    }
+    events = {
+      share($event) {
+        const id = this.id;
+        this.showShare = true;
+        this.sharePath = `pages/couponCatch?id=${id}`;
+        this.shareTitle = this.title;
+        this.shareImg = this.cover;
+        this.articleType = 1;
+        this.articleId = id;
+        this.type = 1;
+      }
+    };
+    async _getCoupon(id) {
+      const res = await api.getCoupon(id);
+      if (res.statusCode === 200) {
+        this.coupon = res.data;
+      }
+      this.userInfo = await api.getUserInfo();
+      const drawRes = await api.drawCoupon(this.coupon.id, this.userInfo.id);
+      if (drawRes.statusCode === 200) {
+        this.result = drawRes.data;
+      }
+      this.$apply();
+    }
+    async _upodateUserInfo(id, data) {
+      await api.updateUser(id, data);
+    };
+    async _checkAuth() {
+      const result = await checkAuth();
+      this.authorized = result;
+      this.$apply();
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bt-color: #d19e69;
+  $sub-text-color: #848484;
+  .coupon_wrapper {
+    background: #fffcf5;
+    min-height: 100vh;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-between;
+    align-items: center;
+    .bar {
+      position: fixed;
+      bottom: 0;
+      z-index: 100;
+      background: white;
+    }
+    .coupon_header {
+      .banner-img {
+        width: 750rpx;
+      }
+    }
+    .coupon_content {
+      width: 750rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      .coupon-content-title {
+        color: $bt-color;
+        margin: 20rpx 0;
+        font-size: 30rpx;
+      }
+      .coupon-content-card {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: flex-start;
+        color: #4a4a4a;
+        background: rgba(243, 155, 0, .2);
+        border-radius: 20rpx;
+        padding: 40rpx;
+        overflow: hidden;
+        width: 600rpx;
+        position: relative;
+        .img-card-share {
+          position: absolute;
+          width: 34rpx;
+          height: 34rpx;
+          right: 40rpx;
+          bottom: 40rpx;
+        }
+        .price {
+          color: #ff7373;
+          margin: 40rpx 0;
+          .price-icon {
+            font-size: 50rpx;
+          }
+          .price-text {
+            margin-left: 30rpx;
+            font-size: 80rpx;
+          }
+        }
+        .desc {
+          font-size: 24rpx;
+          margin: 2rpx 0;
+          & text:first-child {
+            margin-right: 20rpx;
+          }
+        }
+      }
+      .coupon-button-wrapper {
+        position: relative;
+        height: 140rpx;
+        width: 680rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .coupon-loading {
+          width: 140rpx;
+          height: 140rpx;
+        }
+        .userinfo-button {
+          position: absolute;
+          top: 0; right: 0; bottom: 0; left: 0;
+          margin: auto;
+          opacity: 0;
+        }
+        .coupon-button {
+          width: 680rpx;
+          height: 100rpx;
+          background: #9b9b9b;
+          border-radius: 5rpx;
+          color: white;
+          font-size: 30rpx;
+          margin: 20rpx 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .active {
+          background: #ff7373;
+        }
+      }
+    }
+    .coupon_footer {
+      color: #4a4a4a;
+      width: 680rpx;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: flex-start;
+      margin-bottom: 30rpx;
+      .footer-title {
+        font-size: 30rpx;
+        margin-bottom: 10rpx;
+      }
+      .footer-text {
+        font-size: 24rpx;
+      }
+    }
+  }
+</style>

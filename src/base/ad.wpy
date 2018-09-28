@@ -1,0 +1,181 @@
+<template>
+  <view class="ad-container" @tap.stop="clickSpace">
+    <view class="card" @tap.stop="clickContent">
+      <view class="close-button">
+        <image src="../common/images/close.png" class="close-img" @tap.stop="clickButton" />
+      </view>
+      <image src="{{imageUrl}}" class="card-img" @tap.stop="clickImg" />
+      <view class="download-button">
+        <image src="../common/images/download.png" class="download-img" @tap.stop="saveImg" />
+      </view>
+    </view>
+
+    <!-- <view class="save-container" hidden="{{!saveItem}}">
+      <view class="save-item">
+        <view class="item-line line-banner">发送给朋友
+          <button open-type='share' class="share-item"></button>
+        </view>
+        <view class="item-line"  @tap.stop="saveImg">保存图片</view>
+      </view>
+      <view class="save-item">
+        <view class="item-line" @tap.stop="cancelSave">取消</view>
+      </view>
+    </view> -->
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class Index extends wepy.component {
+    props = {
+      imageUrl: {
+        type: String,
+        default: ''
+      },
+    };
+    data = {
+      saveItem: false,
+    }
+    methods = {
+      clickSpace() {
+        this.$emit('clickAdSpace');
+        this.saveItem = false;
+      },
+      clickContent() {
+
+      },
+      clickButton() {
+        this.$emit('clickAdButton');
+        this.saveItem = false;
+      },
+      // longpressImg(e) {
+      //   this.saveItem = true;
+      // },
+      // cancelSave() {
+      //   this.saveItem = false;
+      // },
+      clickImg() {
+        wx.previewImage({
+          urls: [this.imageUrl] // 需要预览的图片http链接列表
+        })
+      },
+      saveImg() {
+        wx.showLoading({
+          title: '存储中...',
+        })
+        const self = this;
+        wx.downloadFile({
+          url: self.imageUrl,
+          success: function(res) {
+            let path = res.tempFilePath;
+            wx.saveImageToPhotosAlbum({
+              filePath: path,
+              success(res) {
+                wx.hideLoading();
+                wx.showToast({
+                  title: '保存成功',
+                  duration: 2000
+                })
+              },
+              fail(res) {
+                wx.hideLoading();
+              },
+            })
+          },
+          fail: function(res){
+            wx.hideLoading();
+          },
+        })
+      },
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $bg-color: rgba(0,0,0,0.6);
+  $ratio: 0.7768;
+  $width: 600rpx;
+  .ad-container {
+    width: 750rpx;
+    height: 100vh;
+    background: $bg-color;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .card {
+      width: $width;
+      height: $width / $ratio;
+      position: relative;
+      .card-img {
+        width: $width;
+        height: $width / $ratio;
+        border-radius: 20rpx;
+      }
+    }
+    .close-button { 
+      position: absolute;
+      z-index: 300;
+      top: -25rpx;
+      right: -25rpx;
+      .close-img {
+        width: 50rpx;
+        height: 50rpx;
+      }
+    }
+    .download-button {
+      position: absolute;
+      z-index: 300;
+      bottom: -120rpx;
+      left: 50%;
+      transform: translateX(-50%);
+      .download-img {
+        width: 75rpx;
+        height: 75rpx;
+      }
+    }
+    .save-container {
+      position: absolute;
+      z-index: 200;
+      bottom: 0;
+      animation: adInfo 0.3s ease-in-out;;
+      .save-item {
+        background: rgb(255, 255, 255);
+        &:first-child {
+          margin-bottom: 15rpx;
+        }
+        .item-line {
+          width: 750rpx;
+          height: 100rpx;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 30rpx;
+          font-weight: 400;
+          position: relative;
+        }
+        .share-item {
+          width: 750rpx;
+          height: 100rpx;
+          position: absolute;
+          top: 0;
+          left: 0;
+          opacity: 0;
+        }
+        .line-banner {
+          border-bottom: 1px solid #f0eff5;
+        }
+      }
+    }
+  }
+  @keyframes adInfo {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 100%, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+</style>

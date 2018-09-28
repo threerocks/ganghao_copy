@@ -1,0 +1,19 @@
+<template>
+  <image src="../common/images/loading.svg"  class="loading" />
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Loading extends wepy.component {
+
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .loading {
+    width: 150rpx;
+    height: 150rpx;
+    display: block;
+  }
+</style>

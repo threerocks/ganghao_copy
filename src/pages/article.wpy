@@ -1,0 +1,366 @@
+<template>
+  <view class="article-container">
+    <!-- <htmltowxml text="{{content[0].data}}" bindWxmlTagATap="wxmlTagATap" /> -->
+    <share :userInfo.sync="userInfo"
+          :type.sync="type"
+          :showShare.sync="showShare"
+          :shareTitle.sync="shareTitle"
+          :shareImg.sync="shareImg"
+          :sharePath.sync="sharePath"
+          :articleType.sync="articleType"
+          :articleId.sync="articleId"
+          wx:if="{{showShare}}"
+    ></share>
+    <view class="article-header">
+      <text class="article-title">{{title}}</text>
+      <text class="article-remark" space="nbsp">刚好读书会  {{date}}</text>
+    </view>
+    <view class="rich-wrapper" wx:if="{{content[0].type == 'text'}}">
+      <rich-text class="rich-text" nodes="{{content[0].data}}" bindtap="tap"></rich-text>
+    </view>
+    <player1 wx:if="{{content[1].type == 'audio'}}" :src.sync="src1" :poster="poster" :name.sync="name1" :normal="getNormalConfig" class="player"></player1>
+    <view class="rich-wrapper" wx:if="{{content[2].type == 'text'}}">
+      <rich-text class="rich-text" nodes="{{content[2].data}}" bindtap="tap"></rich-text>
+    </view>
+    <player2 wx:if="{{content[3].type == 'audio'}}" :src.sync="src2" :poster="poster" :name.sync="name2" :normal="getNormalConfig" class="player"></player2>
+    <view class="rich-wrapper" wx:if="{{content[4].type == 'text'}}">
+      <rich-text class="rich-text" nodes="{{content[4].data}}" bindtap="tap"></rich-text>
+    </view>
+    <player3 wx:if="{{content[5].type == 'audio'}}" :src.sync="src3" :poster="poster" :name.sync="name3" :normal="getNormalConfig" class="player"></player3>
+    <view class="rich-wrapper" wx:if="{{content[6].type == 'text'}}">
+      <rich-text class="rich-text" nodes="{{content[6].data}}" bindtap="tap"></rich-text>
+    </view>
+    <perch></perch>
+    <star class="star-container"></star>
+    <bar class="bar" :mainPage.sync="mainPage" :share.sync="share" :star.sync="star" :starCount.sync="starCount"></bar>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import Player from '@/base/player-inner';
+  import Star from '@/base/star';
+  import moment from 'moment';
+  import Bar from '@/base/bar';
+  import Share from '@/components/share';
+  import Perch from '@/base/perch';
+  import {urlParse} from '@/common/js/func'
+
+  export default class Article extends wepy.page {
+    config = {
+      'navigationBarTextStyle': 'black',
+      'navigationBarTitleText': '刚好读书会文章',
+      'navigationBarBackgroundColor': 'white',
+      'enablePullDownRefresh': true,
+      'backgroundTextStyle': 'dark'
+    }
+    data = {
+      id: -1,
+      content: [],
+      title: '',
+      cover: '',
+      audioFlag: [],
+      poster: 'https://gh.rrdnyyy.com/books/book-cover-1522377593742.jpg',
+      name1: '',
+      name2: '',
+      name3: '',
+      src1: '',
+      src2: '',
+      src3: '',
+      starCount: 0,
+      date: '',
+      type: 0,
+      readCount: 0,
+      mainPage: true,
+      share: true,
+      star: true,
+      showShare: false,
+      shareTitle: '',
+      shareImg: '',
+      sharePath: '',
+      articleType: -1,
+      articleId: -1,
+      userInfo: {},
+    }
+    onPullDownRefresh() {
+      wx.showNavigationBarLoading();
+      this._getInfo().then(res => {
+        wx.hideNavigationBarLoading();
+        wx.stopPullDownRefresh();
+      });
+    }
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        const target = res.target;
+        if (target.dataset) {
+          const data = target.dataset;
+          return {
+            title: data.title,
+            path: data.path,
+            imageUrl: data.img,
+          }
+        }
+      }
+      return {
+        title: `${this.title}`,
+        path: `/page/article?id=${this.id}`,
+        imageUrl: `${this.cover}`
+      }
+    };
+    onLoad(option) {
+      if(option.q){ 
+        const link = decodeURIComponent(option.q);
+        const param = urlParse(link);
+        this.id = param.id;
+      } else {
+        if (option.id) {
+          this.id = option.id;
+        }
+      }
+      this._getInfo();
+      this._getUserInfo();
+      this._getReadCount();
+      this._getStarCount(this.id);
+    };
+    computed = {
+      getNormalConfig() {
+        return false;
+      }
+    };
+    events = {
+      debounceChange(count, $event) {
+        this._updateStar(this.id, count);
+      },
+      numberChange(number, $event) {
+        this.starCount = this.starCount + number;
+      },
+      share($event) {
+        const id = this.id;
+        if (!this.userInfo) this._getUserInfo();
+        this.showShare = true;
+        this.sharePath = `pages/article?id=${id}`;
+        this.shareTitle = this.title;
+        this.shareImg = this.cover;
+        this.articleType = 1;
+        this.articleId = id;
+        this.type = 1;
+      }
+    };
+    components = {
+      player1: Player,
+      player2: Player,
+      player3: Player,
+      star: Star,
+      bar: Bar,
+      share: Share,
+      perch: Perch,
+    }
+    async _getInfo() {
+      const id = this.id;
+      const res = await api.getTodayArticle(id);
+      this.title = res.data && res.data.article && res.data.article.title ? res.data.article.title : '';
+      this.cover = res.data && res.data.article && res.data.article.urls ? res.data.article.urls[0] : '';
+      const content = res.data && res.data.renderHtml ? res.data.renderHtml : [];
+      this.content = content;
+      const dateItem = res.data && res.data.date ? moment(res.data.date) : moment();
+      this.date = `${dateItem.month() + 1}.${dateItem.date()}`;
+      if (Array.isArray(content)) {
+        let i = 1;
+        for (const item of content) {
+          if (item.type === 'audio') {
+            this[`name${i}`] = item.name || '简介音频';
+            this[`src${i}`] = item.src;
+            i++;
+          }
+        }
+      }
+      this.$apply();
+    }
+    async _getReadCount() {
+      const id = this.id;
+      const type = 1;
+      const data = await api.getReadCount(type, id);
+      if (data.statusCode === 200) {
+        this.readCount = data.data && data.data.count ? data.data.count : 0;
+        this.$apply();        
+      }
+    }
+    async _getStarCount(id) {
+      const type = 1;
+      const data = await api.getStarCount(type, id);
+      if (data.statusCode === 200) {
+        this.starCount = data.data && data.data.count ? data.data.count : 0;
+        this.$apply();        
+      }
+    };
+    async _getUserInfo(noOnce) {
+      this.userInfo = await api.getUserInfo();
+      this.$apply();
+    };
+    async _updateStar(id, count) {
+      const type = 1;
+      const data = await api.updateStar(type, id, count);
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .article-container {
+    width: 750rpx;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    .bar {
+      position: fixed;
+      bottom: 0;
+      z-index: 100;
+      background: white;
+    }
+    .star-container {
+      position: fixed;
+      right: 50rpx;
+      bottom: 150rpx;
+      overflow: visible;
+    }
+    .article-header {
+      width: 100%;
+      padding: 0 40rpx;
+      box-sizing: border-box;
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: flex-start;
+      align-items: flex-start;
+      .article-title {
+        font-size: 50rpx;
+        color: #000000;
+        font-weight: 400;
+        margin: 20rpx 0;
+      }
+      .article-remark {
+        font-size: 25rpx;
+        color: #9B9B9B;
+        font-weight: 300;
+      }
+    }
+    .player {
+      margin: 40rpx;
+    }
+    .rich-wrapper {
+      width: 100%;
+      padding: 0 40rpx;
+      box-sizing: border-box;
+      .rich-text {
+        width: 670rpx;
+      }
+      .rich-img {
+        width: 100%;
+      }
+      .hljs-left {
+        text-align: left;
+      }
+      .hljs-center {
+        text-align: center;
+      }
+      .hljs-right {
+        text-align: right;
+      }
+      .g-a {
+        color:deepskyblue;
+      }
+      .g-p {
+        margin: 60rpx 0;
+        color:#4A4A4A;
+        line-height: 1.9;
+        font-size: 29rpx;
+        font-weight: 300;
+      }
+      .g-pre {
+        font-size: 80%;
+        white-space: pre;
+        font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+        padding: 10px;
+        border:1px solid #ececec;
+        border-radius: 6px;
+        display:block;
+        overflow-x:auto;
+        padding: 10rpx;
+        background:#fafafa;
+        line-height: 1.6;
+        margin: 20rpx 0;
+      }
+      .g-mark {
+        background-color: #a4cadd;
+        color: white;
+      }
+      .g-img {
+        width: 100%;
+      }
+      .g-h1 {
+        margin: 70rpx 0;
+        user-select: all;
+        font-weight: 500;
+        font-size: 50rpx;
+      }
+      .g-h2 {
+        margin: 70rpx 0;
+        user-select: all;
+        font-weight: 500;
+        font-size: 44rpx;
+      }
+      .g-h3 {
+        font-size: 37rpx;
+        margin: 70rpx 0;
+        user-select: all;
+        font-weight: 500;
+      }
+      .g-h4 {
+        margin: 70rpx 0;
+        user-select: all;
+        font-size: 30rpx;
+        margin: 70rpx 0;
+      }
+      .g-h5 {
+        color: #9B9B9B;
+        line-height: 1.5;
+        font-size: 25rpx;
+        margin: 0;
+        padding: 0;
+        font-weight: 300;
+        font-style: italic;
+      }
+      .g-h6 {
+        color: #9B9B9B;
+        line-height: 1.5;
+        font-size: 25rpx;
+        margin: 0;
+        padding: 0;
+        font-weight: 300;
+      }
+      .g-blockquote {
+        border-left: 3px solid #a9c8dd;
+        padding: 1rpx 40rpx;
+        margin: 10rpx 0;
+        text-align: left;
+        line-height: 2;
+        background: #f6f6f6;
+      }
+      .g-blockquote .g-p {
+        font-size: 26rpx !important;
+        word-break: break-all !important;
+        margin: 30rpx 0;
+      }
+      .hljs-center {
+        text-align: center;
+      }
+      .hljs-left {
+        text-align: left;
+      }
+      .hljs-right {
+        text-align: right;
+      }
+    }
+  }
+</style>

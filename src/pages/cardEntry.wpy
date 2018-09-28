@@ -1,0 +1,153 @@
+<template>
+  <view class="card-container" style="background-image: url({{bgLine}});">
+    <view class="img-container">
+      <image src="{{bg}}" class="image"/>
+      <view class="content">
+        <text class="text">输入名字试试</text>
+        <input placeholder="" maxlength="6" @input="bindKeyInput" class="text-input" />
+        <radio-group class="radio-group" @change="radioChange">
+          <label class="radio" wx:for="{{items}}" wx:key="index" wx:for-index="index" wx:for-item="item">
+            <radio value="{{item.name}}" checked="{{item.checked}}" color="#eac696"/>{{item.value}}
+          </label>
+        </radio-group>
+        <view class="btn" @tap="create">
+          生成
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+
+  export default class Card extends wepy.page {
+    data = {
+      bg: '',
+      items: [
+        {name: 'pride', value: '傲慢', checked: 'true'},
+        {name: 'prejudice', value: '偏见'},
+      ],
+      value: '',
+      flagValue: 0,
+      inputValue: '',
+      bgLine: '',
+    };
+
+    onShareAppMessage(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '傲慢与偏见',
+        path: '/pages/cardEntry',
+        imageUrl: 'https://gh.rrdnyyy.com/books/book-cover-1525681714812.jpg',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    };
+    onLoad() {
+      this.value = this.items[0].value;
+      this._getCardImages();
+    };
+    methods = {
+      radioChange(e) {
+        const value = e.detail.value;
+        this.flagValue = value === 'pride' ? 0 : 1;
+      },
+      bindKeyInput(e) {
+        const value = e.detail.value;
+        this.inputValue = value;
+      },
+      create() {
+        const value = this.flagValue;
+        const name = this.inputValue;
+        if (!name) {
+          wx.showToast({
+            title: '请填入姓名',
+            image: '../common/images/warning.png',
+            duration: 2000
+          })
+          return;
+        }
+        wx.navigateTo({
+          url: `card?value=${value}&name=${name}`,
+        });
+      }
+    }
+    async _getCardImages() {
+      const res = await api.getCardImages();
+      const data = res.data;
+      this.bgLine = data.bgLine;
+      this.bg = data.bg;
+      this.$apply();
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  $width: 640rpx;
+  $font-color: #a95705;
+  $btn-color: #eac696;
+  $font-size: 22rpx;
+  .card-container {
+    width: 750rpx;
+    height: 100vh;
+    background-size:100px 9.5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .img-container {
+      width: $width;
+      height: $width * 1.33;
+      position: relative;
+      .image {
+        width: 100%;
+        height: 100%;
+      }
+      .content {
+        position: absolute;
+        width: 80%;
+        height: 320rpx;
+        bottom: 100rpx;
+        left: 0;
+        right: 0;
+        margin: auto;
+        .text {
+          color: $font-color;
+          font-size: $font-size;
+        }
+        .text-input {
+          background: white;
+          height: 75rpx;
+          margin: 10rpx 0;
+        }
+        .radio-group {
+          color: $font-color;
+          font-size: $font-size;
+          .radio {
+            radio {
+              transform:scale(0.5);
+            }
+          }
+        }
+        .btn {
+          width: 100%;
+          height: 75rpx;
+          background: $btn-color;
+          color: white;
+          font-size: 28rpx;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 50rpx;
+        }
+      }
+    }
+  }
+</style>

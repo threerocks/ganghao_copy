@@ -1,0 +1,124 @@
+<template>
+  <view class="bar-container">
+    <view class="bar-left">
+      <view wx:if="{{mainPage}}" class="icon-container" @tap.stop="goHome">
+        <image src="../common/images/mainPage.png" class="bar-icon" mode="widthFix"/>
+      </view>
+      <view wx:if="{{share}}" class="icon-container" @tap.stop="clickShare">
+        <image src="../common/images/share.png" class="bar-icon" mode="widthFix"/>
+      </view>
+      <view wx:if="{{gift}}" class="icon-container">
+        <image src="../common/images/gift.png" class="bar-icon" mode="widthFix"/>
+      </view>
+      <view wx:if="{{font}}" class="icon-container" @tap.stop="changeFontSize">
+        <image src="../common/images/font_small.png" class="bar-icon" hidden="{{!small}}" mode="widthFix"/>
+        <image src="../common/images/font_big.png" class="bar-icon" hidden="{{small}}" mode="widthFix"/>
+      </view>
+    </view>
+    <view class="bar-right">
+      <text wx:if="{{star}}" space="nbsp" class="bar-text">{{starCount}} claps</text>
+      <text wx:if="{{browse}}" space="nbsp" class="bar-text">{{browseCount}} read</text>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+
+  export default class Bar extends wepy.component {
+    props = {
+      mainPage: {
+        type: Boolean,
+        default: false,
+      },
+      share: {
+        type: Boolean,
+        default: false,
+      },
+      gift: {
+        type: Boolean,
+        default: false,
+      },
+      font: {
+        type: Boolean,
+        default: false,
+      },
+      star: {
+        type: Boolean,
+        default: false,
+      },
+      starCount: {
+        type: Number,
+        default: 0,
+      },
+      browse: {
+        type: Boolean,
+        default: false,
+      },
+      browseCount: {
+        type: Number,
+        default: 0,
+      },
+    };
+    data = {
+      small: true,
+    };
+    methods = {
+      changeFontSize() {
+        this.small = !this.small;
+        this.$emit('resize', this.small);
+      },
+      clickShare() {
+        this.$emit('share');
+      },
+      goHome() {
+        wx.navigateTo({
+          url: `index`,
+        });
+      },
+    };
+    watch = {
+
+    };
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .bar-container {
+    width: 750rpx;
+    height: 100rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .bar-left {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .icon-container {
+        width: 100rpx;
+        height: 100rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        .bar-icon {
+          width: 35rpx;
+          height: 35rpx;
+        }
+      }
+    }
+    .bar-right {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .bar-text {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 30rpx;
+        font-weight: 300;
+        font-size: 28rpx;
+      }
+    }
+  }
+</style>

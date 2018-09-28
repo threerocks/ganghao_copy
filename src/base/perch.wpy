@@ -1,0 +1,21 @@
+<template>
+  <view>
+    <view class="perch"></view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+
+  export default class Perch extends wepy.component {
+
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .perch {
+    background-color: transparent;
+    width: 750rpx;
+    height: 130rpx;;
+  }
+</style>

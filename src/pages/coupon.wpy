@@ -1,0 +1,65 @@
+<template>
+  <view class="coupon-list">
+    <view class="no-coupon" wx:if="{{coupons.length <= 0}}">
+      你还没有优惠券哦~
+    </view>
+    <couponList :coupons.sync="coupons" wx:if="{{coupons.length > 0}}"></couponList>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from '@/common/js/api';
+  import CouponList from '@/base/coupon-list';
+
+  export default class Index extends wepy.page {
+    config = {
+      'navigationBarTitleText': '我的优惠券',
+    };
+    components = {
+      couponList: CouponList,
+    };
+    data = {
+      userId: -1,
+      coupons: [],
+    };
+    onLoad(option) {
+      this.userId = option.userId;
+      this._getCoupons();
+    };
+    onPullDownRefresh() {
+      wx.stopPullDownRefresh();
+    };
+    async _getCoupons() {
+      const res = await api.getCouponAvailable(this.userId);
+      if (res.statusCode === 200) {
+        const coupons = res.data;
+        this.coupons = coupons;
+        this.$apply();
+      }
+    }
+  }
+</script>
+
+<style type="scss" lang="scss">
+  .coupon-list {
+    width: 750rpx;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: white;
+    z-index: 300;
+    .no-coupon {
+      width: 750rpx;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+</style>
